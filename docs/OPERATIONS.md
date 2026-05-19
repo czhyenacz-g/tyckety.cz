@@ -109,6 +109,37 @@ Platbu ověřit: zkontrolovat bankovní výpis — variabilní symbol musí souh
    - Adresát odmítl email (bounce) → Resend dashboard → Logs
 4. V MVP neexistuje retry mechanismus — pokud je email kritický, kontaktuj zákazníka ručně
 
+## Jak importovat platby z Raiffeisenbank CSV
+
+### Stažení výpisu z RB
+1. Přihlas se do RB Internet Bankingu
+2. Přejdi na výpis účtu → Exportovat → CSV
+3. Stáhneš soubor `Pohyby_{čísloÚčtu}_{timestamp}.csv`
+4. CSV soubor neukládej ani necommituj — obsahuje finanční data
+
+### Import v adminu
+1. Přejdi na `/app/akce/{eventId}`
+2. Rozbal sekci "Import plateb z bankovního výpisu (CSV)"
+3. Vyber soubor nebo přepni na "Vložit obsah CSV" a vlož obsah
+4. Klikni "Zpracovat platby"
+5. Zobrazí se souhrn: kolik objednávek bylo označeno zaplacených, kolik čeká, kolik chyb
+
+### Interpretace výsledků
+
+| Výsledek | Co dělat |
+|----------|----------|
+| **Spárováno** | Objednávka označena `paid` — vystaviž vstupenky tlačítkem v tabulce |
+| **Chybná částka** | Zákazník zaplatil jinak — zkontroluj ručně a označ zaplaceno manuálně |
+| **Neznámý VS** | Platba z jiné akce nebo jiného pořadatele — ignoruj |
+| **Chybí VS** | Zákazník zapomněl VS — identifikuj platbu ručně podle částky/data |
+| **Pozdní platba** | Platba přišla po vypršení objednávky — rozhodni ručně |
+| **Duplikát** | Stejné CSV bylo importováno znovu — bezpečně přeskočeno |
+
+### Jiné banky
+CSV formáty Fio, Komerční banky, ČSOB zatím nejsou podporovány automaticky. Pro tyto banky:
+- Použij ruční potvrzení platby (tlačítko "Označit zaplaceno" v tabulce objednávek)
+- Nebo počkej na budoucí custom CSV mapper (viz `docs/PAYMENTS.md`)
+
 ## Jak řešit pozdní platbu
 
 Situace: platba dorazila po vypršení `paymentDisplayDeadlineAt` (15 min), ale ještě před `paymentGraceDeadlineAt` (60 min).

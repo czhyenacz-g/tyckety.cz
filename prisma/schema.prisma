@@ -183,7 +183,7 @@ model PaymentRecord {
   organizer Organizer @relation(fields: [organizerId], references: [id])
   order     Order?    @relation(fields: [orderId], references: [id])
 
-  @@index([organizerId, transactionId])
+  @@unique([organizerId, transactionId])
 }
 
 // ─── ScanAccessToken ──────────────────────────────────────────────────────────

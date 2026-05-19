@@ -1,13 +1,35 @@
 # PAYMENTS.md — Platební flow a import bankovního výpisu
 
-## Aktuální MVP stav
+## Aktuální stav
 
-Platby se párují **ručně**:
+Platby lze párovat dvěma způsoby:
+
+### Ruční potvrzení
 1. Pořadatel vidí platbu na svém bankovním výpisu s variabilním symbolem
-2. Najde odpovídající objednávku v `/app/akce/{eventId}` nebo `/internal/events/{eventId}`
-3. Klikne "Označit zaplaceno" → `PATCH /api/objednavka/{id}/paid`
+2. Najde odpovídající objednávku v `/app/akce/{eventId}` → klikne "Označit zaplaceno"
 
-Automatické párování není implementováno. Tato dokumentace připravuje půdu pro budoucí implementaci CSV importu z Raiffeisenbank.
+### CSV import z Raiffeisenbank (implementováno)
+1. Pořadatel stáhne CSV export pohybů z Raiffeisenbank
+2. Na `/app/akce/{eventId}` rozbalí sekci "Import plateb z bankovního výpisu (CSV)"
+3. Nahraje soubor nebo vloží obsah CSV, klikne "Zpracovat platby"
+4. API endpoint: `POST /api/akce/{eventId}/import-csv`
+
+**Co import dělá:**
+- Páruje podle VS + přesná částka (exact match) → automaticky označí objednávku jako `paid`
+- Deduplikuje podle `transactionId` (unikátní per organizerId) — opakovaný import stejného CSV je bezpečný
+- Nepřepisuje `tickets_issued` zpět na `paid`
+- Neukládá původní CSV soubor — jen normalizované `PaymentRecord` záznamy
+- Nevystavuje vstupenky automaticky — to zůstává manuální akcí pořadatele
+
+**Stavy pro každý řádek:**
+- `matched` — exact match VS + částka → objednávka označena `paid`
+- `amount_mismatch` — VS sedí, částka nesedí → ruční kontrola
+- `unknown_symbol` — VS nenalezen v objednávkách akce → ignorováno
+- `missing_symbol` — prázdný VS → ignorováno
+- `late_payment` — VS sedí, ale objednávka je expirovaná → ruční rozhodnutí
+- `already_paid` — objednávka už je `paid` nebo `tickets_issued` → bez změny
+- `duplicate` — `transactionId` už byl importován → přeskočeno
+- `wrong_account` — platba přišla na jiný účet než pořadatele → přeskočeno
 
 ---
 
@@ -245,13 +267,46 @@ function escapeCsvCell(value: string): string {
 
 ---
 
-## Budoucí implementace — co připravit
+## Future: custom CSV mapping (není implementováno)
 
-Až se bude implementovat import, bude potřeba:
+Pro jiné banky než Raiffeisenbank (Fio, Komerční, ČSOB) bude potřeba wizard pro mapování sloupců:
 
-1. **Přidat `bankTransactionId` do `PaymentRecord`** — pro deduplikaci
-2. **UI pro upload CSV** — `/app/akce/{eventId}/import` nebo globálně v `/app`
-3. **Manual review fronta** — zobrazit pořadateli transakce, které nebylo možné automaticky spárovat
-4. **Webhook alternativa** — Raiffeisenbank nabízí API (compat. s ČSOB/Komerční), ale CSV je pro MVP dostatečné
+**Flow:**
+1. Pořadatel nahraje CSV z jiné banky
+2. Systém detekuje neznámé hlavičky → zobrazí "Neznámý formát"
+3. Ukáže náhled prvních 10 řádků CSV
+4. Nad každým sloupcem selectbox s možnostmi:
+   - ignorovat
+   - variabilní symbol ← klíčové
+   - částka ← klíčové
+   - datum platby, měna, ID transakce, typ transakce, číslo protiúčtu, název protiúčtu, zpráva, poznámka
+5. Pořadatel zadá název konfigurace (např. "Fio CSV") a uloží
+6. Při příštím importu se nabídnou uložené konfigurace
 
-Tato dokumentace pokrývá **pouze parsing a matching logiku**. Implementace není součástí MVP.
+**Model pro uložení konfigurace:**
+
+```
+CsvImportProfile
+- id
+- organizerId
+- name (např. "Fio banka CSV")
+- delimiter (výchozí ";")
+- hasHeader (bool)
+- columnMapping JSON:
+    {
+      "variableSymbol": "VS",
+      "amount": "Objem",
+      "transactionId": "ID pohybu",
+      "paymentDate": "Datum",
+      "counterpartyAccount": "Protiúčet"
+    }
+- createdAt / updatedAt
+```
+
+**Guardrails pro implementaci:**
+- `CsvImportProfile` je nová entita — nevkládat do stávajícího `PaymentRecord`
+- Mapping wizard = samostatná stránka nebo modal, ne součást stávajícího importu
+- Pokud VS nebo amount chybí v mapování, wizard to musí vyžadovat
+
+**Alternativa — bankovní API:**
+Raiffeisenbank nabízí API (kompatibilní s ČSOB, KB). Pro automatické párování bez ručního exportu CSV — ale to je mimo MVP scope.

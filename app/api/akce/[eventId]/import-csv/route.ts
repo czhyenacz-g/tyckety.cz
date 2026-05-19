@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { parseRaiffeisenCsv } from "@/lib/csv/raiffeisen";
@@ -14,6 +15,7 @@ interface ImportDetail {
 
 const PAID_STATUSES: OrderStatus[] = ["paid", "tickets_issued"];
 const LATE_STATUSES: OrderStatus[] = ["expired", "payment_received_late"];
+const UNPAID_STATUSES: OrderStatus[] = ["awaiting_payment", "payment_window_expired"];
 
 export async function POST(
   request: Request,
@@ -42,13 +44,27 @@ export async function POST(
   if (!csvContent || typeof csvContent !== "string") {
     return NextResponse.json({ error: "csvContent je povinný" }, { status: 400 });
   }
-  if (csvContent.length > 5 * 1024 * 1024) {
-    return NextResponse.json({ error: "CSV je příliš velký (max 5 MB)" }, { status: 413 });
+  if (csvContent.length > 2 * 1024 * 1024) {
+    return NextResponse.json({ error: "CSV je příliš velký (max 2 MB)" }, { status: 413 });
   }
 
-  const { payments, errors: parseErrors } = parseRaiffeisenCsv(csvContent);
+  const parseResult = parseRaiffeisenCsv(csvContent);
 
-  const [orders, org, existingTxRecords] = await Promise.all([
+  if (parseResult.unsupportedFormat) {
+    const missing = parseResult.unsupportedFormat.missingHeaders.join(", ");
+    return NextResponse.json(
+      {
+        error: `Tento CSV formát zatím neumíme automaticky zpracovat. Podporovaný formát: CSV export pohybů z Raiffeisenbank. Chybějící sloupce: ${missing}.`,
+        unsupportedFormat: true,
+        missingHeaders: parseResult.unsupportedFormat.missingHeaders,
+      },
+      { status: 422 }
+    );
+  }
+
+  const { payments, errors: parseErrors } = parseResult;
+
+  const [orders, org, existingTxRecords, ticketCategories] = await Promise.all([
     db.order.findMany({
       where: { eventId },
       select: {
@@ -58,6 +74,7 @@ export async function POST(
         status: true,
         buyerName: true,
         paymentGraceDeadlineAt: true,
+        quantity: true,
       },
     }),
     db.organizer.findUnique({
@@ -67,6 +84,10 @@ export async function POST(
     db.paymentRecord.findMany({
       where: { organizerId: organizer.id, transactionId: { not: null } },
       select: { transactionId: true },
+    }),
+    db.ticketCategory.findMany({
+      where: { eventId },
+      select: { capacity: true, soldCount: true },
     }),
   ]);
 
@@ -83,6 +104,7 @@ export async function POST(
   let duplicates = 0;
   let totalAmountCzk = 0;
   let matchedAmountCzk = 0;
+  let newlyPaidTicketsQuantity = 0;
   const details: ImportDetail[] = [];
 
   for (const payment of payments) {
@@ -117,20 +139,24 @@ export async function POST(
     // Missing VS
     if (!payment.variableSymbol) {
       missingSymbol++;
-      await db.paymentRecord.create({
-        data: {
-          organizerId: organizer.id,
-          amountCzk: payment.amountCzk,
-          variableSymbol: "",
-          status: "missing_symbol",
-          transactionId: payment.transactionId,
-          paymentDate: payment.paymentDate,
-          counterpartyAccount: payment.counterpartyAccount,
-          counterpartyName: payment.counterpartyName,
-          source: "raiffeisenbank_csv",
-        },
-      });
-      existingTxIds.add(payment.transactionId);
+      try {
+        await db.paymentRecord.create({
+          data: {
+            organizerId: organizer.id,
+            amountCzk: payment.amountCzk,
+            variableSymbol: "",
+            status: "missing_symbol",
+            transactionId: payment.transactionId,
+            paymentDate: payment.paymentDate,
+            counterpartyAccount: payment.counterpartyAccount,
+            counterpartyName: payment.counterpartyName,
+            source: "raiffeisenbank_csv",
+          },
+        });
+        existingTxIds.add(payment.transactionId);
+      } catch (err) {
+        if (isUniqueConstraintError(err)) { duplicates++; missingSymbol--; }
+      }
       details.push({
         transactionId: payment.transactionId,
         variableSymbol: null,
@@ -144,20 +170,24 @@ export async function POST(
 
     if (!order) {
       unknownSymbol++;
-      await db.paymentRecord.create({
-        data: {
-          organizerId: organizer.id,
-          amountCzk: payment.amountCzk,
-          variableSymbol: payment.variableSymbol,
-          status: "unknown_symbol",
-          transactionId: payment.transactionId,
-          paymentDate: payment.paymentDate,
-          counterpartyAccount: payment.counterpartyAccount,
-          counterpartyName: payment.counterpartyName,
-          source: "raiffeisenbank_csv",
-        },
-      });
-      existingTxIds.add(payment.transactionId);
+      try {
+        await db.paymentRecord.create({
+          data: {
+            organizerId: organizer.id,
+            amountCzk: payment.amountCzk,
+            variableSymbol: payment.variableSymbol,
+            status: "unknown_symbol",
+            transactionId: payment.transactionId,
+            paymentDate: payment.paymentDate,
+            counterpartyAccount: payment.counterpartyAccount,
+            counterpartyName: payment.counterpartyName,
+            source: "raiffeisenbank_csv",
+          },
+        });
+        existingTxIds.add(payment.transactionId);
+      } catch (err) {
+        if (isUniqueConstraintError(err)) { duplicates++; unknownSymbol--; }
+      }
       details.push({
         transactionId: payment.transactionId,
         variableSymbol: payment.variableSymbol,
@@ -167,24 +197,27 @@ export async function POST(
       continue;
     }
 
-    // Order found — categorize
     if (PAID_STATUSES.includes(order.status)) {
       alreadyPaid++;
-      await db.paymentRecord.create({
-        data: {
-          organizerId: organizer.id,
-          orderId: order.id,
-          amountCzk: payment.amountCzk,
-          variableSymbol: payment.variableSymbol,
-          status: "already_paid",
-          transactionId: payment.transactionId,
-          paymentDate: payment.paymentDate,
-          counterpartyAccount: payment.counterpartyAccount,
-          counterpartyName: payment.counterpartyName,
-          source: "raiffeisenbank_csv",
-        },
-      });
-      existingTxIds.add(payment.transactionId);
+      try {
+        await db.paymentRecord.create({
+          data: {
+            organizerId: organizer.id,
+            orderId: order.id,
+            amountCzk: payment.amountCzk,
+            variableSymbol: payment.variableSymbol,
+            status: "already_paid",
+            transactionId: payment.transactionId,
+            paymentDate: payment.paymentDate,
+            counterpartyAccount: payment.counterpartyAccount,
+            counterpartyName: payment.counterpartyName,
+            source: "raiffeisenbank_csv",
+          },
+        });
+        existingTxIds.add(payment.transactionId);
+      } catch (err) {
+        if (isUniqueConstraintError(err)) { duplicates++; alreadyPaid--; }
+      }
       details.push({
         transactionId: payment.transactionId,
         variableSymbol: payment.variableSymbol,
@@ -197,21 +230,25 @@ export async function POST(
 
     if (LATE_STATUSES.includes(order.status)) {
       latePayment++;
-      await db.paymentRecord.create({
-        data: {
-          organizerId: organizer.id,
-          orderId: order.id,
-          amountCzk: payment.amountCzk,
-          variableSymbol: payment.variableSymbol,
-          status: "late_payment",
-          transactionId: payment.transactionId,
-          paymentDate: payment.paymentDate,
-          counterpartyAccount: payment.counterpartyAccount,
-          counterpartyName: payment.counterpartyName,
-          source: "raiffeisenbank_csv",
-        },
-      });
-      existingTxIds.add(payment.transactionId);
+      try {
+        await db.paymentRecord.create({
+          data: {
+            organizerId: organizer.id,
+            orderId: order.id,
+            amountCzk: payment.amountCzk,
+            variableSymbol: payment.variableSymbol,
+            status: "late_payment",
+            transactionId: payment.transactionId,
+            paymentDate: payment.paymentDate,
+            counterpartyAccount: payment.counterpartyAccount,
+            counterpartyName: payment.counterpartyName,
+            source: "raiffeisenbank_csv",
+          },
+        });
+        existingTxIds.add(payment.transactionId);
+      } catch (err) {
+        if (isUniqueConstraintError(err)) { duplicates++; latePayment--; }
+      }
       details.push({
         transactionId: payment.transactionId,
         variableSymbol: payment.variableSymbol,
@@ -222,25 +259,28 @@ export async function POST(
       continue;
     }
 
-    // Matchable status — check amount
     if (payment.amountCzk !== order.totalAmountCzk) {
       amountMismatch++;
-      await db.paymentRecord.create({
-        data: {
-          organizerId: organizer.id,
-          orderId: order.id,
-          amountCzk: payment.amountCzk,
-          variableSymbol: payment.variableSymbol,
-          status: "amount_mismatch",
-          transactionId: payment.transactionId,
-          paymentDate: payment.paymentDate,
-          counterpartyAccount: payment.counterpartyAccount,
-          counterpartyName: payment.counterpartyName,
-          source: "raiffeisenbank_csv",
-          note: `Očekáváno: ${order.totalAmountCzk} Kč, přijato: ${payment.amountCzk} Kč`,
-        },
-      });
-      existingTxIds.add(payment.transactionId);
+      try {
+        await db.paymentRecord.create({
+          data: {
+            organizerId: organizer.id,
+            orderId: order.id,
+            amountCzk: payment.amountCzk,
+            variableSymbol: payment.variableSymbol,
+            status: "amount_mismatch",
+            transactionId: payment.transactionId,
+            paymentDate: payment.paymentDate,
+            counterpartyAccount: payment.counterpartyAccount,
+            counterpartyName: payment.counterpartyName,
+            source: "raiffeisenbank_csv",
+            note: `Očekáváno: ${order.totalAmountCzk} Kč, přijato: ${payment.amountCzk} Kč`,
+          },
+        });
+        existingTxIds.add(payment.transactionId);
+      } catch (err) {
+        if (isUniqueConstraintError(err)) { duplicates++; amountMismatch--; }
+      }
       details.push({
         transactionId: payment.transactionId,
         variableSymbol: payment.variableSymbol,
@@ -251,45 +291,91 @@ export async function POST(
       continue;
     }
 
-    // Exact match — create PaymentRecord + mark order as paid
-    matched++;
-    matchedAmountCzk += payment.amountCzk;
-    await db.$transaction([
-      db.paymentRecord.create({
-        data: {
-          organizerId: organizer.id,
-          orderId: order.id,
-          amountCzk: payment.amountCzk,
-          variableSymbol: payment.variableSymbol,
-          status: "matched",
+    // Exact match — transaction: create PaymentRecord + update Order
+    // Order.update uses status guard so tickets_issued can never revert to paid
+    try {
+      await db.$transaction([
+        db.paymentRecord.create({
+          data: {
+            organizerId: organizer.id,
+            orderId: order.id,
+            amountCzk: payment.amountCzk,
+            variableSymbol: payment.variableSymbol,
+            status: "matched",
+            transactionId: payment.transactionId,
+            paymentDate: payment.paymentDate,
+            counterpartyAccount: payment.counterpartyAccount,
+            counterpartyName: payment.counterpartyName,
+            source: "raiffeisenbank_csv",
+          },
+        }),
+        db.order.updateMany({
+          where: { id: order.id, status: { notIn: ["paid", "tickets_issued"] } },
+          data: { status: "paid" },
+        }),
+      ]);
+      matched++;
+      matchedAmountCzk += payment.amountCzk;
+      newlyPaidTicketsQuantity += order.quantity;
+      existingTxIds.add(payment.transactionId);
+      order.status = "paid";
+      details.push({
+        transactionId: payment.transactionId,
+        variableSymbol: payment.variableSymbol,
+        amountCzk: payment.amountCzk,
+        result: "matched",
+        buyerName: order.buyerName,
+      });
+    } catch (err) {
+      if (isUniqueConstraintError(err)) {
+        duplicates++;
+        details.push({
           transactionId: payment.transactionId,
-          paymentDate: payment.paymentDate,
-          counterpartyAccount: payment.counterpartyAccount,
-          counterpartyName: payment.counterpartyName,
-          source: "raiffeisenbank_csv",
-        },
-      }),
-      db.order.update({
-        where: { id: order.id },
-        data: { status: "paid" },
-      }),
-    ]);
-    existingTxIds.add(payment.transactionId);
-    // Update local map so subsequent rows don't re-match the same order
-    order.status = "paid";
-    details.push({
-      transactionId: payment.transactionId,
-      variableSymbol: payment.variableSymbol,
-      amountCzk: payment.amountCzk,
-      result: "matched",
-      buyerName: order.buyerName,
-    });
+          variableSymbol: payment.variableSymbol,
+          amountCzk: payment.amountCzk,
+          result: "duplicate",
+        });
+      }
+    }
   }
+
+  // Post-loop stats
+  const stillUnpaidOrders = orders.filter((o) => UNPAID_STATUSES.includes(o.status));
+  const stillUnpaidOrdersCount = stillUnpaidOrders.length;
+  const stillUnpaidTicketsQuantity = stillUnpaidOrders.reduce((s, o) => s + o.quantity, 0);
+
+  const totalPaidTicketsQuantity = orders
+    .filter((o) => PAID_STATUSES.includes(o.status))
+    .reduce((s, o) => s + o.quantity, 0);
+
+  const totalCapacity = ticketCategories.reduce((s, c) => s + c.capacity, 0);
+  const totalSold = ticketCategories.reduce((s, c) => s + c.soldCount, 0);
+  const remainingCapacity = Math.max(0, totalCapacity - totalSold - stillUnpaidTicketsQuantity);
+
+  const errorCount = amountMismatch + missingSymbol + unknownSymbol + latePayment;
+
+  const parts: string[] = [];
+  if (matched > 0) {
+    parts.push(`Nově označeno ${newlyPaidTicketsQuantity} lístků jako zaplacených.`);
+  }
+  if (stillUnpaidOrdersCount > 0) {
+    parts.push(`${stillUnpaidTicketsQuantity} lístků stále čeká na platbu.`);
+  }
+  if (totalPaidTicketsQuantity > 0) {
+    parts.push(`Celkem je zaplaceno ${totalPaidTicketsQuantity} lístků.`);
+  }
+  parts.push(`Zbývá volných ${remainingCapacity} míst.`);
+  if (errorCount > 0) {
+    parts.push(`U ${errorCount} plateb je potřeba ruční kontrola.`);
+  }
+  const humanSummary = parts.join(" ");
 
   return NextResponse.json({
     summary: {
       processed: payments.length,
       matched,
+      newlyPaidOrdersCount: matched,
+      newlyPaidTicketsQuantity,
       amountMismatch,
       unknownSymbol,
       missingSymbol,
@@ -299,8 +385,22 @@ export async function POST(
       parseErrors: parseErrors.length,
       totalAmountCzk,
       matchedAmountCzk,
+      stillUnpaidOrdersCount,
+      stillUnpaidTicketsQuantity,
+      totalPaidTicketsQuantity,
+      remainingCapacity,
+      errorCount,
+      rowsWithMissingSymbol: missingSymbol,
+      rowsWithAmountMismatch: amountMismatch,
+      rowsWithUnknownSymbol: unknownSymbol,
+      duplicatePaymentsCount: duplicates,
     },
+    humanSummary,
     details,
     parseErrors,
   });
+}
+
+function isUniqueConstraintError(err: unknown): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
 }

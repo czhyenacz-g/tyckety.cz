@@ -19,7 +19,17 @@ export interface ParseError {
 export interface ParseResult {
   payments: ParsedPayment[];
   errors: ParseError[];
+  unsupportedFormat?: { missingHeaders: string[] };
 }
+
+const REQUIRED_HEADERS = [
+  "Id transakce",
+  "Datum zaúčtování",
+  "Zaúčtovaná částka",
+  "Měna účtu",
+  "VS",
+  "Typ transakce",
+] as const;
 
 function stripBom(s: string): string {
   return s.charCodeAt(0) === 0xfeff ? s.slice(1) : s;
@@ -83,6 +93,12 @@ export function parseRaiffeisenCsv(csvContent: string): ParseResult {
   }
 
   const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+
+  const missingHeaders = REQUIRED_HEADERS.filter((h) => !headers.includes(h));
+  if (missingHeaders.length > 0) {
+    return { payments: [], errors: [], unsupportedFormat: { missingHeaders } };
+  }
+
   const payments: ParsedPayment[] = [];
   const errors: ParseError[] = [];
 

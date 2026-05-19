@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 interface ImportSummary {
   processed: number;
   matched: number;
+  newlyPaidTicketsQuantity: number;
   amountMismatch: number;
   unknownSymbol: number;
   missingSymbol: number;
@@ -13,8 +14,9 @@ interface ImportSummary {
   alreadyPaid: number;
   duplicates: number;
   parseErrors: number;
-  totalAmountCzk: number;
   matchedAmountCzk: number;
+  stillUnpaidOrdersCount: number;
+  errorCount: number;
 }
 
 interface ImportDetail {
@@ -27,6 +29,7 @@ interface ImportDetail {
 
 interface ImportResult {
   summary: ImportSummary;
+  humanSummary: string;
   details: ImportDetail[];
   parseErrors: { line: number; error: string }[];
 }
@@ -53,19 +56,28 @@ const RESULT_COLOR: Record<string, string> = {
   wrong_account: "text-gray-600",
 };
 
+type InputMode = "file" | "paste";
+
 export default function CsvImportForm({ eventId }: { eventId: string }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useState<InputMode>("file");
+  const [pasteContent, setPasteContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const file = fileRef.current?.files?.[0];
-    if (!file) {
-      setError("Vyberte CSV soubor");
-      return;
+
+    let csvContent: string;
+    if (mode === "file") {
+      const file = fileRef.current?.files?.[0];
+      if (!file) { setError("Vyberte CSV soubor"); return; }
+      csvContent = await file.text();
+    } else {
+      if (!pasteContent.trim()) { setError("Vložte obsah CSV"); return; }
+      csvContent = pasteContent;
     }
 
     setLoading(true);
@@ -73,7 +85,6 @@ export default function CsvImportForm({ eventId }: { eventId: string }) {
     setResult(null);
 
     try {
-      const csvContent = await file.text();
       const res = await fetch(`/api/akce/${eventId}/import-csv`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,19 +115,43 @@ export default function CsvImportForm({ eventId }: { eventId: string }) {
       </summary>
       <div className="mt-3 bg-gray-800 border border-gray-700 rounded-xl p-5">
         <p className="text-xs text-gray-500 mb-3">
-          Nahrajte CSV výpis z Raiffeisenbank. Platby se automaticky spárují s objednávkami podle variabilního symbolu.
+          Podporovaný formát: CSV export pohybů z Raiffeisenbank. Platby se spárují s objednávkami podle variabilního symbolu a částky.
         </p>
-        <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-3">
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,text/csv"
-            className="text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-700 file:text-gray-300 hover:file:bg-gray-600 file:cursor-pointer"
-          />
+
+        <div className="flex gap-2 mb-3">
+          {(["file", "paste"] as InputMode[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={`text-xs px-3 py-1 rounded-lg transition-colors ${mode === m ? "bg-gray-600 text-white" : "text-gray-500 hover:text-gray-400"}`}
+            >
+              {m === "file" ? "Nahrát soubor" : "Vložit obsah CSV"}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {mode === "file" ? (
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="block text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-700 file:text-gray-300 hover:file:bg-gray-600 file:cursor-pointer"
+            />
+          ) : (
+            <textarea
+              value={pasteContent}
+              onChange={(e) => setPasteContent(e.target.value)}
+              rows={6}
+              placeholder={`"Id transakce";"Datum zaúčtování";"Zaúčtovaná částka";…`}
+              className="w-full text-xs font-mono bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-gray-300 placeholder-gray-600 focus:outline-none focus:border-gray-500 resize-y"
+            />
+          )}
           <button
             type="submit"
             disabled={loading}
-            className="text-xs px-4 py-2 bg-amber-700 hover:bg-amber-600 disabled:opacity-50 text-amber-100 rounded-lg transition-colors shrink-0"
+            className="text-xs px-4 py-2 bg-amber-700 hover:bg-amber-600 disabled:opacity-50 text-amber-100 rounded-lg transition-colors"
           >
             {loading ? "Zpracovávám…" : "Zpracovat platby"}
           </button>
@@ -126,6 +161,12 @@ export default function CsvImportForm({ eventId }: { eventId: string }) {
 
         {result && (
           <div className="mt-5">
+            {result.humanSummary && (
+              <p className="text-sm text-gray-200 mb-4 leading-relaxed border-l-2 border-amber-600 pl-3">
+                {result.humanSummary}
+              </p>
+            )}
+
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4">
               {[
                 { label: "Zpracováno", value: result.summary.processed, color: "" },
@@ -143,12 +184,6 @@ export default function CsvImportForm({ eventId }: { eventId: string }) {
                 </div>
               ))}
             </div>
-
-            {result.summary.matchedAmountCzk > 0 && (
-              <p className="text-green-400 text-sm font-medium mb-3">
-                Automaticky spárováno: {result.summary.matchedAmountCzk.toLocaleString("cs-CZ")} Kč
-              </p>
-            )}
 
             {result.details.length > 0 && (
               <div className="overflow-x-auto">
