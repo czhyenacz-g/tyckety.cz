@@ -329,13 +329,51 @@ export default async function OrderPage({
 
         {isExpired && (
           <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 mb-4">
-            <p className="font-semibold text-gray-300 mb-1">Objednávka expirovala</p>
-            <p className="text-gray-500 text-sm mb-4">
-              Platba nebyla přijata v platební lhůtě. Kapacita vstupenek byla uvolněna.
-            </p>
-            <Link href="/" className="text-amber-400 hover:text-amber-300 text-sm transition-colors">
-              Koupit nové vstupenky →
-            </Link>
+            {effectiveStatus === "payment_window_expired" ? (
+              <>
+                <p className="font-semibold text-amber-300 mb-2">Čas pro garantovanou rezervaci vypršel</p>
+                <p className="text-gray-300 text-sm leading-relaxed mb-2">
+                  Pokud jste už zaplatili, neplaťte znovu. Platba se může potvrdit později podle variabilního symbolu. Pořadatel ji případně dohledá v bankovním výpisu.
+                </p>
+                <p className="text-gray-500 text-xs leading-relaxed mb-4">
+                  Vstupenky zatím nejsou vystavené. Jejich vydání nemusí být garantované, dokud pořadatel platbu nepotvrdí.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-gray-300 mb-2">Objednávka už není garantovaná</p>
+                <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                  Pokud jste nezaplatili, můžete vytvořit novou objednávku. Pokud jste už zaplatili, neplaťte znovu — kontaktujte pořadatele a pošlete mu variabilní symbol objednávky.
+                </p>
+              </>
+            )}
+
+            <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
+              <p className="text-gray-500 text-xs uppercase tracking-wide mb-3">Údaje pro dohledání platby</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">Variabilní symbol</span>
+                  <span className="font-mono font-bold text-white">{order.variableSymbol}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">Částka</span>
+                  <span className="text-gray-300">{order.totalAmountCzk.toLocaleString("cs-CZ")} Kč</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">E-mail</span>
+                  <span className="text-gray-400 text-xs">{order.buyerEmail}</span>
+                </div>
+              </div>
+              <p className="text-gray-600 text-xs mt-3">Tyto údaje pomohou pořadateli dohledat platbu.</p>
+            </div>
+
+            <CopyVS value={order.variableSymbol} />
+
+            <div className="mt-5 pt-4 border-t border-gray-700">
+              <Link href="/" className="text-gray-600 hover:text-gray-400 text-xs transition-colors">
+                Neplatili jste? Vytvořit novou objednávku →
+              </Link>
+            </div>
           </div>
         )}
 
