@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { expireStaleOrders } from "@/lib/orders";
 
@@ -20,68 +21,84 @@ export async function POST(req: NextRequest) {
   // Lazy expiration: uvolni kapacitu po propadlých pending objednávkách
   await expireStaleOrders(eventId);
 
-  try {
-    const order = await db.$transaction(
-      async (tx) => {
-        const category = await tx.ticketCategory.findUnique({
-          where: { id: categoryId },
-          select: { id: true, eventId: true, capacity: true, soldCount: true, priceCzk: true },
-        });
+  const MAX_VS_RETRIES = 3;
 
-        if (!category || category.eventId !== eventId) {
-          throw new Error("invalid_category");
+  for (let attempt = 0; attempt < MAX_VS_RETRIES; attempt++) {
+    try {
+      const order = await db.$transaction(
+        async (tx) => {
+          const category = await tx.ticketCategory.findUnique({
+            where: { id: categoryId },
+            select: { id: true, eventId: true, capacity: true, soldCount: true, priceCzk: true },
+          });
+
+          if (!category || category.eventId !== eventId) {
+            throw new Error("invalid_category");
+          }
+
+          // Rezervace aktivních pending objednávek (deadline ještě neuplynul)
+          const reservedResult = await tx.order.aggregate({
+            where: {
+              eventId,
+              status: "awaiting_payment",
+              paymentDisplayDeadlineAt: { gt: new Date() },
+            },
+            _sum: { quantity: true },
+          });
+          const reserved = reservedResult._sum.quantity ?? 0;
+
+          // soldCount = potvrzené vstupenky; reserved = pending rezervace
+          const available = category.capacity - category.soldCount - reserved;
+          if (available < qty) {
+            throw new Error("no_capacity");
+          }
+
+          const vs = generateVariableSymbol();
+
+          // Tickety se nevytvářejí tady — až při "Vystavit vstupenky"
+          const newOrder = await tx.order.create({
+            data: {
+              eventId,
+              buyerName: buyerName.trim(),
+              buyerEmail: buyerEmail.trim().toLowerCase(),
+              status: "awaiting_payment",
+              quantity: qty,
+              totalAmountCzk: category.priceCzk * qty,
+              variableSymbol: vs,
+              paymentDisplayDeadlineAt: new Date(Date.now() + 15 * 60 * 1000),
+              paymentGraceDeadlineAt: new Date(Date.now() + 60 * 60 * 1000),
+            },
+          });
+
+          return newOrder;
+        },
+        { isolationLevel: "Serializable" },
+      );
+
+      return NextResponse.json({ orderToken: order.publicToken }, { status: 201 });
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message === "no_capacity") {
+          return NextResponse.json({ error: "Kapacita vstupenek je vyčerpána." }, { status: 409 });
         }
-
-        // Rezervace aktivních pending objednávek (deadline ještě neuplynul)
-        const reservedResult = await tx.order.aggregate({
-          where: {
-            eventId,
-            status: "awaiting_payment",
-            paymentDisplayDeadlineAt: { gt: new Date() },
-          },
-          _sum: { quantity: true },
-        });
-        const reserved = reservedResult._sum.quantity ?? 0;
-
-        // soldCount = potvrzené vstupenky; reserved = pending rezervace
-        const available = category.capacity - category.soldCount - reserved;
-        if (available < qty) {
-          throw new Error("no_capacity");
+        if (err.message === "invalid_category") {
+          return NextResponse.json({ error: "Kategorie vstupenky nenalezena." }, { status: 404 });
         }
-
-        const vs = generateVariableSymbol();
-
-        // Tickety se nevytvářejí tady — až při "Vystavit vstupenky"
-        const newOrder = await tx.order.create({
-          data: {
-            eventId,
-            buyerName: buyerName.trim(),
-            buyerEmail: buyerEmail.trim().toLowerCase(),
-            status: "awaiting_payment",
-            quantity: qty,
-            totalAmountCzk: category.priceCzk * qty,
-            variableSymbol: vs,
-            paymentDisplayDeadlineAt: new Date(Date.now() + 15 * 60 * 1000),
-            paymentGraceDeadlineAt: new Date(Date.now() + 60 * 60 * 1000),
-          },
-        });
-
-        return newOrder;
-      },
-      { isolationLevel: "Serializable" },
-    );
-
-    return NextResponse.json({ orderToken: order.publicToken }, { status: 201 });
-  } catch (err) {
-    if (err instanceof Error) {
-      if (err.message === "no_capacity") {
-        return NextResponse.json({ error: "Kapacita vstupenek je vyčerpána." }, { status: 409 });
       }
-      if (err.message === "invalid_category") {
-        return NextResponse.json({ error: "Kategorie vstupenky nenalezena." }, { status: 404 });
+      // P2002 na variableSymbol — zkus znovu s novým VS
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002" &&
+        Array.isArray(err.meta?.target) &&
+        (err.meta.target as string[]).includes("variableSymbol")
+      ) {
+        if (attempt < MAX_VS_RETRIES - 1) continue;
+        return NextResponse.json({ error: "Chyba generování platebního symbolu, zkuste to znovu." }, { status: 500 });
       }
+      console.error("[objednavka]", err);
+      return NextResponse.json({ error: "Interní chyba, zkuste to znovu." }, { status: 500 });
     }
-    console.error("[objednavka]", err);
-    return NextResponse.json({ error: "Interní chyba, zkuste to znovu." }, { status: 500 });
   }
+
+  return NextResponse.json({ error: "Interní chyba, zkuste to znovu." }, { status: 500 });
 }

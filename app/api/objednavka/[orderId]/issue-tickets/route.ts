@@ -12,62 +12,72 @@ export async function PATCH(
 
   const { orderId } = await params;
 
-  const order = await db.order.findFirst({
+  // Ověření vlastnictví objednávky před transakcí
+  const orderCheck = await db.order.findFirst({
     where: { id: orderId, event: { organizerId: session.organizer.id } },
-    include: {
-      event: { include: { ticketCategories: { take: 1 } } },
-    },
+    select: { id: true },
   });
+  if (!orderCheck) return NextResponse.json({ error: "Objednávka nenalezena" }, { status: 404 });
 
-  if (!order) return NextResponse.json({ error: "Objednávka nenalezena" }, { status: 404 });
+  try {
+    const result = await db.$transaction(async (tx) => {
+      // Znovu načti stav uvnitř transakce — guard proti double-click / race condition
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: { event: { include: { ticketCategories: { take: 1 } } } },
+      });
 
-  if (order.status === "tickets_issued") {
-    return NextResponse.json({ error: "Vstupenky již vystaveny" }, { status: 409 });
+      if (!order) throw new Error("not_found");
+
+      if (order.status === "tickets_issued") throw new Error("already_issued");
+      if (order.status !== "paid") throw new Error("not_paid");
+
+      const category = order.event.ticketCategories[0];
+      if (!category) throw new Error("no_category");
+
+      // Zpětná kompatibilita: tickety byly vytvořeny ve starém toku — jen aktualizuj status
+      const existingCount = await tx.ticket.count({ where: { orderId: order.id } });
+      if (existingCount > 0) {
+        await tx.order.update({ where: { id: orderId }, data: { status: "tickets_issued" } });
+        return { qty: 0 };
+      }
+
+      const qty = order.quantity;
+
+      await tx.ticket.createMany({
+        data: Array.from({ length: qty }, () => ({
+          orderId: order.id,
+          eventId: order.eventId,
+          categoryId: category.id,
+          token: randomUUID(),
+          status: "issued" as const,
+        })),
+      });
+      await tx.ticketCategory.update({
+        where: { id: category.id },
+        data: { soldCount: { increment: qty } },
+      });
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: "tickets_issued" },
+      });
+
+      return { qty };
+    });
+
+    return NextResponse.json({ ok: true, qty: result.qty });
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message === "already_issued")
+        return NextResponse.json({ error: "Vstupenky již vystaveny" }, { status: 409 });
+      if (err.message === "not_paid")
+        return NextResponse.json({ error: "Objednávka musí být nejprve označena jako zaplacená" }, { status: 409 });
+      if (err.message === "not_found")
+        return NextResponse.json({ error: "Objednávka nenalezena" }, { status: 404 });
+      if (err.message === "no_category")
+        return NextResponse.json({ error: "Kategorie vstupenek nenalezena" }, { status: 500 });
+    }
+    console.error("[issue-tickets]", err);
+    return NextResponse.json({ error: "Interní chyba" }, { status: 500 });
   }
-
-  if (order.status !== "paid") {
-    return NextResponse.json(
-      { error: "Objednávka musí být nejprve označena jako zaplacená" },
-      { status: 409 },
-    );
-  }
-
-  const category = order.event.ticketCategories[0];
-  if (!category) {
-    return NextResponse.json({ error: "Kategorie vstupenek nenalezena" }, { status: 500 });
-  }
-
-  // Počet vstupenek: z order.quantity (nový tok) nebo z existujících tiketů (starý tok)
-  const existingTicketCount = await db.ticket.count({ where: { orderId: order.id } });
-
-  if (existingTicketCount > 0) {
-    // Zpětná kompatibilita: tickety byly vytvořeny v starém toku — jen aktualizuj status
-    await db.order.update({ where: { id: orderId }, data: { status: "tickets_issued" } });
-    return NextResponse.json({ ok: true });
-  }
-
-  const qty = order.quantity;
-
-  // Vytvořit tickety + navýšit soldCount + aktualizovat status objednávky
-  await db.$transaction([
-    db.ticket.createMany({
-      data: Array.from({ length: qty }, () => ({
-        orderId: order.id,
-        eventId: order.eventId,
-        categoryId: category.id,
-        token: randomUUID(),
-        status: "issued" as const,
-      })),
-    }),
-    db.ticketCategory.update({
-      where: { id: category.id },
-      data: { soldCount: { increment: qty } },
-    }),
-    db.order.update({
-      where: { id: orderId },
-      data: { status: "tickets_issued" },
-    }),
-  ]);
-
-  return NextResponse.json({ ok: true });
 }

@@ -23,7 +23,7 @@ async function main() {
       title: "Demo Akce 2025",
       slug: "demo-akce-2025",
       description: "Ukázková akce pro testování Tyckety.cz.",
-      startsAt: new Date("2025-09-01T18:00:00Z"),
+      startsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       venueName: "Divadlo Na Příkopě",
       venueAddress: "Na Příkopě 1, 110 00 Praha 1",
       status: "published",
