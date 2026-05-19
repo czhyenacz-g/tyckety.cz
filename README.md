@@ -97,4 +97,5 @@ Technická a provozní dokumentace v `docs/`:
 | [`docs/ROUTES.md`](docs/ROUTES.md) | Tabulka všech rout + API endpointů |
 | [`docs/EMAILS.md`](docs/EMAILS.md) | Email implementace, Resend, šablony, doručitelnost |
 | [`docs/OPERATIONS.md`](docs/OPERATIONS.md) | Env proměnné, seed, deploy, provozní postupy |
+| [`docs/PAYMENTS.md`](docs/PAYMENTS.md) | Platební flow, Raiffeisenbank CSV formát a matching logika |
 | [`docs/TESTING.md`](docs/TESTING.md) | Testovací checklisty |

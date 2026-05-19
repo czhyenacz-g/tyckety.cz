@@ -91,4 +91,5 @@ Přidej `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>` na konec com
 | Testovací checklisty | `docs/TESTING.md` |
 | DB schema | `prisma/schema.prisma` |
 | Lib funkce | `lib/` |
+| Platební flow + RB CSV import | `docs/PAYMENTS.md` |
 | Env proměnné | `docs/OPERATIONS.md` |
