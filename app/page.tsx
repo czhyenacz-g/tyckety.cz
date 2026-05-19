@@ -40,7 +40,7 @@ export default function Home() {
                 <div className="space-y-1 text-gray-300 text-sm">
                   <p>📅 24. října 2026 · 19:00</p>
                   <p>📍 Klub Inferno, Praha</p>
-                  <p>🎟 Základní vstupenka — 350 Kč</p>
+                  <p>🎟 Základní vstupenka — 299 Kč</p>
                 </div>
               </div>
 
