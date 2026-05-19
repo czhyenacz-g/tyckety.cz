@@ -125,15 +125,15 @@ export default function PurchaseForm({ eventId, category }: Props) {
         </p>
       )}
 
-      <div className="border-t border-gray-700 pt-4 flex items-center justify-between">
-        <div>
+      <div className="border-t border-gray-700 pt-5 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="sm:flex-1">
           <p className="text-xs text-gray-500">Celkem k úhradě</p>
-          <p className="text-xl font-bold text-amber-400">{total.toLocaleString("cs-CZ")} Kč</p>
+          <p className="text-2xl font-bold text-amber-400">{total.toLocaleString("cs-CZ")} Kč</p>
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-gray-900 font-semibold px-6 py-3 rounded-lg transition-colors"
+          className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-gray-900 font-semibold px-5 py-2.5 rounded-xl transition-colors text-base"
         >
           {loading ? "Odesílám…" : "Vytvořit objednávku"}
         </button>
