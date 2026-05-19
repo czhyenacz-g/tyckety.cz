@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Organizer ────────────────────────────────────────────────────────────────
+
+model Organizer {
+  id                String   @id @default(uuid())
+  name              String
+  slug              String   @unique
+  email             String   @unique
+  bankAccount       String
+  notificationEmail String
+  createdAt         DateTime @default(now())
+
+  events         Event[]
+  paymentRecords PaymentRecord[]
+}
+
+// ─── Event ────────────────────────────────────────────────────────────────────
+
+enum EventStatus {
+  draft
+  published
+  cancelled
+  ended
+}
+
+model Event {
+  id           String      @id @default(uuid())
+  organizerId  String
+  title        String
+  slug         String      @unique
+  description  String?
+  startsAt     DateTime
+  venueName    String?
+  venueAddress String?
+  status       EventStatus @default(draft)
+  posterUrl    String?
+  createdAt    DateTime    @default(now())
+
+  organizer        Organizer        @relation(fields: [organizerId], references: [id])
+  ticketCategories TicketCategory[]
+  orders           Order[]
+  tickets          Ticket[]
+  scanTokens       ScanAccessToken[]
+}
+
+// ─── TicketCategory ───────────────────────────────────────────────────────────
+
+model TicketCategory {
+  id        String   @id @default(uuid())
+  eventId   String
+  name      String
+  priceCzk  Int
+  capacity  Int
+  soldCount Int      @default(0)
+  createdAt DateTime @default(now())
+
+  event   Event    @relation(fields: [eventId], references: [id])
+  tickets Ticket[]
+}
+
+// ─── Order ────────────────────────────────────────────────────────────────────
+
+// variableSymbol: max 10číselný string generovaný aplikací (Czech banking VS)
+enum OrderStatus {
+  awaiting_payment
+  payment_window_expired
+  paid
+  tickets_issued
+  expired
+  payment_received_late
+  manual_review
+}
+
+model Order {
+  id                       String      @id @default(uuid())
+  eventId                  String
+  buyerName                String
+  buyerEmail               String
+  status                   OrderStatus @default(awaiting_payment)
+  totalAmountCzk           Int
+  variableSymbol           String      @unique
+  publicToken              String      @unique @default(uuid())
+  paymentDisplayDeadlineAt DateTime
+  paymentGraceDeadlineAt   DateTime
+  createdAt                DateTime    @default(now())
+
+  event          Event           @relation(fields: [eventId], references: [id])
+  tickets        Ticket[]
+  paymentRecords PaymentRecord[]
+}
+
+// ─── Ticket ───────────────────────────────────────────────────────────────────
+
+enum TicketStatus {
+  issued
+  used
+  cancelled
+}
+
+model Ticket {
+  id         String       @id @default(uuid())
+  orderId    String
+  eventId    String
+  categoryId String
+  token      String       @unique @default(uuid())
+  status     TicketStatus @default(issued)
+  usedAt     DateTime?
+  createdAt  DateTime     @default(now())
+
+  order    Order          @relation(fields: [orderId], references: [id])
+  event    Event          @relation(fields: [eventId], references: [id])
+  category TicketCategory @relation(fields: [categoryId], references: [id])
+}
+
+// ─── PaymentRecord ────────────────────────────────────────────────────────────
+// Záznamy příchozích plateb — párování podle variableSymbol.
+// orderId je null dokud platba není spárována s objednávkou.
+
+enum PaymentRecordStatus {
+  unmatched
+  matched
+  excess
+  partial
+}
+
+model PaymentRecord {
+  id             String              @id @default(uuid())
+  organizerId    String
+  orderId        String?
+  amountCzk      Int
+  variableSymbol String
+  status         PaymentRecordStatus @default(unmatched)
+  note           String?
+  createdAt      DateTime            @default(now())
+
+  organizer Organizer @relation(fields: [organizerId], references: [id])
+  order     Order?    @relation(fields: [orderId], references: [id])
+}
+
+// ─── ScanAccessToken ──────────────────────────────────────────────────────────
+
+model ScanAccessToken {
+  id        String   @id @default(uuid())
+  eventId   String
+  token     String   @unique @default(uuid())
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
+}
