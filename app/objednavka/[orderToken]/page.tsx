@@ -11,6 +11,7 @@ import Nav from "@/app/components/Nav";
 import { czechAccountToIBAN, buildSpdString } from "@/lib/spd";
 import Countdown from "./Countdown";
 import PrintButton from "./PrintButton";
+import CopyVS from "./CopyVS";
 
 type OrderStatus =
   | "awaiting_payment"
@@ -198,7 +199,6 @@ export default async function OrderPage({
             <div className="space-y-3">
               <Row label="Číslo účtu" value={order.event.organizer.bankAccount || "—"} />
               <Row label="Částka" value={`${order.totalAmountCzk.toLocaleString("cs-CZ")} Kč`} />
-              <Row label="Variabilní symbol" value={order.variableSymbol} highlight copyable />
               <div className="flex items-center justify-between pt-1">
                 <span className="text-gray-500 text-sm">Zbývá čas</span>
                 <Countdown deadlineIso={displayDeadline.toISOString()} />
@@ -214,6 +214,20 @@ export default async function OrderPage({
               />
             </div>
 
+            <CopyVS value={order.variableSymbol} />
+
+            <p className="text-gray-600 text-xs mt-3 leading-relaxed">
+              Variabilní symbol si můžete uložit. Pokud by bylo potřeba platbu dohledat, pořadatel ji podle něj a podle e-mailu v objednávce najde v bankovním výpisu.
+            </p>
+
+            <div className="bg-gray-900/60 border border-gray-700 rounded-xl p-4 mt-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Co se stane po zaplacení</p>
+              <p className="text-sm text-gray-300 leading-relaxed">
+                Po zaplacení vám vstupenky pošleme e-mailem. Zobrazí se také na této stránce, jakmile pořadatel platbu potvrdí. Odkaz na objednávku jsme vám poslali e-mailem — stránku si můžete pro jistotu uložit.
+              </p>
+              <p className="text-xs text-amber-400/80 mt-3 font-medium">Pokud jste už zaplatili, neplaťte znovu.</p>
+            </div>
+
             <p className="text-gray-500 text-xs mt-5 leading-relaxed border-t border-gray-700 pt-4">
               Platba musí být odeslána do konce odpočtu. Pozdější platby se systém
               pokusí automaticky spárovat, ale vydání vstupenek{" "}
@@ -225,9 +239,9 @@ export default async function OrderPage({
 
         {isPaymentConfirmed && (
           <div className="bg-green-900/20 border border-green-800 rounded-xl p-5 mb-4">
-            <p className="font-semibold text-green-400 mb-1">Platba potvrzena</p>
-            <p className="text-gray-400 text-sm">
-              Pořadatel vstupenky brzy vystaví. Stránku obnovte za chvíli.
+            <p className="font-semibold text-green-400 mb-2">Platba potvrzena</p>
+            <p className="text-gray-300 text-sm leading-relaxed">
+              Pořadatel nyní vystaví vstupenky. Jakmile budou připravené, zobrazí se tady a dorazí vám e-mailem.
             </p>
           </div>
         )}
@@ -235,8 +249,10 @@ export default async function OrderPage({
         {isIssued && (
           <>
             <div className="bg-green-900/20 border border-green-800 rounded-xl p-5 mb-4 no-print">
-              <p className="font-semibold text-green-400 mb-1">Vstupenky vydány</p>
-              <p className="text-gray-400 text-sm">Předložte vstupenky níže u vstupu na akci.</p>
+              <p className="font-semibold text-green-400 mb-2">Vstupenky jsou připravené</p>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Najdete je níže a také v e-mailu. U vstupu ukažte QR kód v telefonu nebo vytištěnou vstupenku.
+              </p>
             </div>
 
             <PrintButton />
