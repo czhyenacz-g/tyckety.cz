@@ -12,6 +12,7 @@ import { czechAccountToIBAN, buildSpdString } from "@/lib/spd";
 import Countdown from "./Countdown";
 import PrintButton from "./PrintButton";
 import CopyVS from "./CopyVS";
+import OrderLinkActions from "./OrderLinkActions";
 
 type OrderStatus =
   | "awaiting_payment"
@@ -341,6 +342,10 @@ export default async function OrderPage({
             </p>
           </div>
         )}
+
+        <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 mb-4 no-print">
+          <OrderLinkActions />
+        </div>
 
         <div className="text-center mt-8 no-print">
           <Link href="/" className="text-gray-500 hover:text-white text-sm transition-colors">
