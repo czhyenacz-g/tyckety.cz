@@ -15,13 +15,13 @@ export default function Home() {
           <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-10 items-center">
 
             {/* Plakát */}
-            <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black/60">
+            <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black/60 group">
               <Image
                 src="/images/test_koncert_web.webp"
                 alt="Plakát — TEST Heavy metal koncert"
                 width={600}
                 height={848}
-                className="w-full h-auto"
+                className="w-full h-auto transition-transform duration-500 ease-out group-hover:scale-105"
                 priority
               />
             </div>
@@ -67,8 +67,8 @@ export default function Home() {
 
               {/* Demo disclaimer */}
               <p className="text-gray-600 text-xs leading-relaxed border-t border-gray-800 pt-4">
-                Tohle je demo akce vytvořená v Tyckety. Koupí testovacího lístku nevzniká nárok
-                na vstup na skutečný koncert. Pokud lístek koupíte, berte to jako podporu vývoje projektu.
+                Tohle je <strong className="text-white">demo akce</strong> vytvořená v Tyckety. Koupí testovacího lístku nevzniká nárok
+                na vstup na skutečný koncert. Pokud lístek koupíte, berte to jako <strong className="text-white">podporu</strong> vývoje <strong className="text-white">projektu</strong>.
               </p>
             </div>
           </div>
