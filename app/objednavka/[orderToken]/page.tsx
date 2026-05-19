@@ -108,6 +108,128 @@ export default async function OrderPage({
 
   const displayDeadline = new Date(order.paymentDisplayDeadlineAt);
 
+  // Simplified wallet view — no payment UI
+  if (isIssued) {
+    return (
+      <>
+        <Nav className="no-print" />
+        <main className="min-h-screen max-w-lg mx-auto px-4 py-12">
+
+          <div className="mb-6 text-center no-print">
+            <h1 className="text-2xl font-bold mb-2">Vstupenky</h1>
+            <span className="inline-block text-xs px-3 py-1 rounded-full text-green-400 bg-green-900/30 border border-green-800">
+              Vstupenky vydány
+            </span>
+          </div>
+
+          <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 mb-4 no-print">
+            <p className="font-bold text-lg">{order.event.title}</p>
+            <p className="text-gray-400 text-sm mt-1">
+              {new Date(order.event.startsAt).toLocaleDateString("cs-CZ", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+            {order.event.venueName && (
+              <p className="text-gray-500 text-sm mt-0.5">{order.event.venueName}</p>
+            )}
+            <div className="mt-4 pt-4 border-t border-gray-700 text-sm text-gray-400">
+              {order.buyerName} · {order.buyerEmail}
+            </div>
+          </div>
+
+          <div className="mb-4 no-print">
+            <PrintButton />
+          </div>
+
+          {order.tickets.map((ticket, i) => (
+            <div key={ticket.id} className="ticket-card bg-gray-800 border border-gray-700 rounded-xl p-5 mb-4">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="text-xs ticket-label text-gray-500 uppercase tracking-wide mb-1">Vstupenka #{i + 1}</p>
+                  <p className="font-bold text-lg ticket-value">{order.event.title}</p>
+                  <p className="text-sm ticket-label text-gray-400 mt-0.5">
+                    {new Date(order.event.startsAt).toLocaleDateString("cs-CZ", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                  {order.event.venueName && (
+                    <p className="text-sm ticket-label text-gray-500 mt-0.5">{order.event.venueName}</p>
+                  )}
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full shrink-0 ml-3 mt-1 ${
+                  ticket.status === "issued" ? "text-green-400 bg-green-900/40" :
+                  ticket.status === "used" ? "text-gray-400 bg-gray-700" :
+                  "text-red-400 bg-red-900/40"
+                }`}>
+                  {ticket.status === "issued" ? "Platná" : ticket.status === "used" ? "Použitá" : "Zrušená"}
+                </span>
+              </div>
+
+              <div className="flex justify-center mb-4">
+                <div className="bg-white rounded-xl p-3 inline-block">
+                  <Image
+                    src={ticketQrUrls[ticket.id]}
+                    alt={`QR vstupenka ${i + 1}`}
+                    width={180}
+                    height={180}
+                    unoptimized
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5 border-t border-gray-700 pt-4">
+                <div className="flex justify-between text-sm">
+                  <span className="ticket-label text-gray-500">Jméno</span>
+                  <span className="ticket-value font-medium">{order.buyerName}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="ticket-label text-gray-500">Kategorie</span>
+                  <span className="ticket-value">{ticket.category.name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="ticket-label text-gray-500">Cena</span>
+                  <span className="ticket-value">{ticket.category.priceCzk.toLocaleString("cs-CZ")} Kč</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="ticket-label text-gray-500">Odkaz na vstupenku</span>
+                  <Link
+                    href={`/vstupenka/${ticket.token}`}
+                    className="ticket-value font-mono text-xs text-amber-400 hover:text-amber-300 transition-colors"
+                  >
+                    {ticket.token.slice(0, 8).toUpperCase()} ↗
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {order.event.organizer.slug === "demo-podnik" && (
+            <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl px-4 py-3 mb-4 text-xs text-gray-600 leading-relaxed no-print">
+              TEST je demo akce. Nevzniká nárok na vstup na skutečný koncert. Platba slouží jako podpora vývoje Tyckety.
+            </div>
+          )}
+
+          <div className="text-center mt-8 no-print">
+            <Link href="/" className="text-gray-500 hover:text-white text-sm transition-colors">
+              ← Zpět na Tyckety.cz
+            </Link>
+          </div>
+
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <Nav className="no-print" />
@@ -245,86 +367,6 @@ export default async function OrderPage({
               Pořadatel nyní vystaví vstupenky. Jakmile budou připravené, zobrazí se tady a dorazí vám e-mailem.
             </p>
           </div>
-        )}
-
-        {isIssued && (
-          <>
-            <div className="bg-green-900/20 border border-green-800 rounded-xl p-5 mb-4 no-print">
-              <p className="font-semibold text-green-400 mb-2">Vstupenky jsou připravené</p>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                Najdete je níže a také v e-mailu. U vstupu ukažte QR kód v telefonu nebo vytištěnou vstupenku.
-              </p>
-            </div>
-
-            <PrintButton />
-
-            {order.tickets.map((ticket, i) => (
-              <div key={ticket.id} className="ticket-card bg-gray-800 border border-gray-700 rounded-xl p-5 mb-4">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <p className="text-xs ticket-label text-gray-500 uppercase tracking-wide mb-1">Vstupenka #{i + 1}</p>
-                    <p className="font-bold text-lg ticket-value">{order.event.title}</p>
-                    <p className="text-sm ticket-label text-gray-400 mt-0.5">
-                      {new Date(order.event.startsAt).toLocaleDateString("cs-CZ", {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                    {order.event.venueName && (
-                      <p className="text-sm ticket-label text-gray-500 mt-0.5">{order.event.venueName}</p>
-                    )}
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full shrink-0 ml-3 mt-1 ${
-                    ticket.status === "issued" ? "text-green-400 bg-green-900/40" :
-                    ticket.status === "used" ? "text-gray-400 bg-gray-700" :
-                    "text-red-400 bg-red-900/40"
-                  }`}>
-                    {ticket.status === "issued" ? "Platná" : ticket.status === "used" ? "Použitá" : "Zrušená"}
-                  </span>
-                </div>
-
-                <div className="flex justify-center mb-4">
-                  <div className="bg-white rounded-xl p-3 inline-block">
-                    <Image
-                      src={ticketQrUrls[ticket.id]}
-                      alt={`QR vstupenka ${i + 1}`}
-                      width={180}
-                      height={180}
-                      unoptimized
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 border-t border-gray-700 pt-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="ticket-label text-gray-500">Jméno</span>
-                    <span className="ticket-value font-medium">{order.buyerName}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="ticket-label text-gray-500">Kategorie</span>
-                    <span className="ticket-value">{ticket.category.name}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="ticket-label text-gray-500">Cena</span>
-                    <span className="ticket-value">{ticket.category.priceCzk.toLocaleString("cs-CZ")} Kč</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="ticket-label text-gray-500">Odkaz na vstupenku</span>
-                    <Link
-                      href={`/vstupenka/${ticket.token}`}
-                      className="ticket-value font-mono text-xs text-amber-400 hover:text-amber-300 transition-colors"
-                    >
-                      {ticket.token.slice(0, 8).toUpperCase()} ↗
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </>
         )}
 
         {isExpired && (
