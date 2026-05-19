@@ -31,6 +31,7 @@ interface Order {
   createdAt: Date;
   paymentDisplayDeadlineAt: Date;
   ticketCount: number;
+  ticketTokens: string[];
   payment: PaymentInfo | null;
 }
 
@@ -130,9 +131,20 @@ function Section({
   );
 }
 
+function matchesSearch(order: Order, q: string): boolean {
+  return (
+    order.buyerName.toLowerCase().includes(q) ||
+    order.buyerEmail.toLowerCase().includes(q) ||
+    order.variableSymbol.toLowerCase().includes(q) ||
+    order.publicToken.toLowerCase().includes(q) ||
+    order.ticketTokens.some((t) => t.toLowerCase().includes(q))
+  );
+}
+
 export default function OrdersTable({ orders }: { orders: Order[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   async function markPaid(orderId: string, requireConfirm: boolean) {
     if (requireConfirm) {
@@ -165,22 +177,58 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
     );
   }
 
+  const q = query.trim().toLowerCase();
+  const filtered = q ? orders.filter((o) => matchesSearch(o, q)) : orders;
+
+  const emptySearch = "Nic nenalezeno v této sekci.";
+
   const groups: Record<OrderGroup, Order[]> = {
     problematic: [],
     pending: [],
     paid: [],
     issued: [],
   };
-  for (const o of orders) groups[classifyOrder(o)].push(o);
+  for (const o of filtered) groups[classifyOrder(o)].push(o);
 
   return (
     <div className="space-y-8">
+
+      {/* Search */}
+      <div>
+        <div className="flex gap-2 items-center">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Hledat podle kódu, VS, e-mailu nebo jména…"
+            className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-600 transition-colors"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="text-xs text-gray-400 hover:text-white px-3 py-2 transition-colors shrink-0"
+            >
+              Vyčistit
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-3 mt-1.5">
+          <p className="text-gray-600 text-xs">
+            Hledá v objednávkách, variabilních symbolech, e-mailech a kódech vstupenek.
+          </p>
+          {q && (
+            <p className="text-gray-400 text-xs shrink-0">
+              Nalezeno: {filtered.length}
+            </p>
+          )}
+        </div>
+      </div>
 
       {/* ── 1. Problematické objednávky ── */}
       <Section
         title="Problematické objednávky"
         count={groups.problematic.length}
-        emptyMessage="Žádné problematické objednávky."
+        emptyMessage={q ? emptySearch : "Žádné problematické objednávky."}
         variant="warning"
       >
         <table className="w-full text-sm whitespace-nowrap">
@@ -235,7 +283,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
       <Section
         title="Objednávky"
         count={groups.pending.length}
-        emptyMessage="Žádné čekající objednávky."
+        emptyMessage={q ? emptySearch : "Žádné čekající objednávky."}
       >
         <table className="w-full text-sm whitespace-nowrap">
           <thead>
@@ -292,7 +340,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
       <Section
         title="Zaplacené objednávky"
         count={groups.paid.length}
-        emptyMessage="Žádné zaplacené objednávky čekající na vstupenky."
+        emptyMessage={q ? emptySearch : "Žádné zaplacené objednávky čekající na vstupenky."}
       >
         <table className="w-full text-sm whitespace-nowrap">
           <thead>
@@ -342,7 +390,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
       <Section
         title="Vyřízené objednávky"
         count={groups.issued.length}
-        emptyMessage="Žádné vyřízené objednávky."
+        emptyMessage={q ? emptySearch : "Žádné vyřízené objednávky."}
       >
         <table className="w-full text-sm whitespace-nowrap">
           <thead>

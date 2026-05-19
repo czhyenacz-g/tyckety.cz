@@ -54,7 +54,7 @@ export default async function EventDetail({
             publicToken: true,
             createdAt: true,
             paymentDisplayDeadlineAt: true,
-            _count: { select: { tickets: true } },
+            tickets: { select: { token: true } },
             paymentRecords: {
               orderBy: { createdAt: "desc" },
               take: 1,
@@ -111,7 +111,8 @@ export default async function EventDetail({
       publicToken: o.publicToken,
       createdAt: o.createdAt,
       paymentDisplayDeadlineAt: o.paymentDisplayDeadlineAt,
-      ticketCount: o._count.tickets,
+      ticketCount: o.tickets.length,
+      ticketTokens: o.tickets.map((t) => t.token),
       payment: o.paymentRecords[0] ?? null,
     }))
     .sort((a, b) => {
