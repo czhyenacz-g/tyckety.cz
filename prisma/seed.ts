@@ -35,12 +35,12 @@ async function main() {
 
   await db.ticketCategory.upsert({
     where: { id: "00000000-0000-0000-0000-000000000002" },
-    update: { priceCzk: 25 },
+    update: { priceCzk: 350 },
     create: {
       id: "00000000-0000-0000-0000-000000000002",
       eventId: event.id,
       name: "Základní vstupenka",
-      priceCzk: 25,
+      priceCzk: 350,
       capacity: 120,
     },
   });
