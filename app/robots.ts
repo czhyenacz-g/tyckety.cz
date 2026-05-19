@@ -9,6 +9,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/app/",
           "/api/",
+          "/internal/",
           "/scan/",
           "/embed/",
           "/objednavka/",
