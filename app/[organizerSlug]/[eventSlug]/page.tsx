@@ -96,7 +96,7 @@ export default async function EventPage({
                   alt={`Plakát — ${event.title}`}
                   width={600}
                   height={850}
-                  className="w-full h-auto object-cover"
+                  className="w-full h-auto object-cover transition-transform duration-300 hover:scale-105"
                   priority
                 />
               </div>
