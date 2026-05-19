@@ -45,6 +45,14 @@ async function main() {
     },
   });
 
+  // Scan token — vytvoř jen pokud žádný aktivní neexistuje
+  const existingToken = await db.scanAccessToken.findFirst({
+    where: { eventId: event.id, active: true },
+  });
+  if (!existingToken) {
+    await db.scanAccessToken.create({ data: { eventId: event.id } });
+  }
+
   console.log(`Seed OK — organizer: ${organizer.slug}, event: ${event.slug}`);
 }
 
