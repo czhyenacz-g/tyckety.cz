@@ -141,6 +141,11 @@ export default async function EventPage({
 
           {/* Right: purchase form */}
           <div className="md:col-span-2">
+            {organizerSlug === "demo-podnik" && (
+              <div className="bg-amber-900/20 border border-amber-800/60 rounded-xl px-4 py-3 mb-4 text-xs text-amber-300 leading-relaxed">
+                TEST je demo akce. Nevzniká nárok na vstup na skutečný koncert. Platba slouží jako dobrovolná podpora vývoje Tyckety.
+              </div>
+            )}
             {category ? (
               <PurchaseForm
                 eventId={event.id}

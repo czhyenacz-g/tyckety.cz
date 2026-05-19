@@ -53,7 +53,7 @@ export default async function OrderPage({
     where: { publicToken: orderToken },
     include: {
       event: {
-        include: { organizer: { select: { name: true, bankAccount: true } } },
+        include: { organizer: { select: { name: true, slug: true, bankAccount: true } } },
       },
       tickets: {
         include: { category: { select: { name: true, priceCzk: true } } },
@@ -169,6 +169,12 @@ export default async function OrderPage({
             </span>
           </div>
         </Card>
+
+        {order.event.organizer.slug === "demo-podnik" && (
+          <div className="bg-amber-900/20 border border-amber-800/60 rounded-xl px-4 py-3 mb-4 text-xs text-amber-300 leading-relaxed no-print">
+            TEST je demo akce. Nevzniká nárok na vstup na skutečný koncert. Platba slouží jako dobrovolná podpora vývoje Tyckety.
+          </div>
+        )}
 
         {isPending && (
           <div className="bg-gray-800 border border-amber-800/60 rounded-xl p-5 mb-4">

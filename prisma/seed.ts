@@ -5,13 +5,13 @@ const db = new PrismaClient();
 async function main() {
   const organizer = await db.organizer.upsert({
     where: { slug: "demo-podnik" },
-    update: {},
+    update: { bankAccount: "8216903002/5500", notificationEmail: "czhyenacz@gmail.com" },
     create: {
       name: "Demo Podnik s.r.o.",
       slug: "demo-podnik",
       email: "info@demo-podnik.cz",
       bankAccount: "8216903002/5500",
-      notificationEmail: "notifikace@demo-podnik.cz",
+      notificationEmail: "czhyenacz@gmail.com",
     },
   });
 
@@ -35,12 +35,12 @@ async function main() {
 
   await db.ticketCategory.upsert({
     where: { id: "00000000-0000-0000-0000-000000000002" },
-    update: {},
+    update: { priceCzk: 25 },
     create: {
       id: "00000000-0000-0000-0000-000000000002",
       eventId: event.id,
       name: "Základní vstupenka",
-      priceCzk: 390,
+      priceCzk: 25,
       capacity: 120,
     },
   });
