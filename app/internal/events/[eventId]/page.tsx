@@ -41,10 +41,9 @@ export default async function InternalEventDetailPage({
 }: {
   params: Promise<{ eventId: string }>;
 }) {
-  const session = await getSession();
-  if (!session || !isSuperAdmin(session.organizer.email)) redirect("/prihlaseni");
-
   const { eventId } = await params;
+  const session = await getSession();
+  if (!session || !isSuperAdmin(session.organizer.email)) redirect(`/prihlaseni?next=/internal/events/${eventId}`);
 
   const event = await db.event.findUnique({
     where: { id: eventId },

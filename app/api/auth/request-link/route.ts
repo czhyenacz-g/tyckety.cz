@@ -4,6 +4,10 @@ import { db } from "@/lib/db";
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  const next =
+    typeof body.next === "string" && body.next.startsWith("/") && !body.next.startsWith("//")
+      ? body.next
+      : null;
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: "Neplatný e-mail." }, { status: 400 });
@@ -38,7 +42,10 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const link = `${req.nextUrl.origin}/api/auth/verify?token=${magicToken.token}`;
+  const linkUrl = new URL(`/api/auth/verify`, req.nextUrl.origin);
+  linkUrl.searchParams.set("token", magicToken.token);
+  if (next) linkUrl.searchParams.set("next", next);
+  const link = linkUrl.toString();
 
   // TODO: V produkci odeslat e-mail s odkazem (např. přes Resend.com nebo SendGrid).
   //       Stačí: resend.emails.send({ to: email, subject: "Přihlašovací odkaz", html: `<a href="${link}">Přihlásit se</a>` })

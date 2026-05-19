@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+function safeNext(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/app";
+  return value;
+}
+
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
+  const next = safeNext(req.nextUrl.searchParams.get("next"));
   const invalid = NextResponse.redirect(new URL("/prihlaseni?error=expired", req.url));
 
   if (!token) return invalid;
@@ -25,7 +31,7 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const response = NextResponse.redirect(new URL("/app", req.url));
+  const response = NextResponse.redirect(new URL(next, req.url));
   response.cookies.set("session", session.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

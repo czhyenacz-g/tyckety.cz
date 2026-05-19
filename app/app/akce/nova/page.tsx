@@ -6,7 +6,7 @@ import NovaAkceForm from "./NovaAkceForm";
 
 export default async function NovaAkce() {
   const session = await getSession();
-  if (!session) redirect("/prihlaseni");
+  if (!session) redirect("/prihlaseni?next=/app");
 
   const { organizer } = session;
 

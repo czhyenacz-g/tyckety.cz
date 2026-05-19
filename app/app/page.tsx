@@ -6,7 +6,7 @@ import AppHeader from "@/app/components/AppHeader";
 
 export default async function AppDashboard() {
   const session = await getSession();
-  if (!session) redirect("/prihlaseni");
+  if (!session) redirect("/prihlaseni?next=/app");
 
   const { organizer } = session;
 

@@ -20,7 +20,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default async function AkceList() {
   const session = await getSession();
-  if (!session) redirect("/prihlaseni");
+  if (!session) redirect("/prihlaseni?next=/app");
 
   const { organizer } = session;
 

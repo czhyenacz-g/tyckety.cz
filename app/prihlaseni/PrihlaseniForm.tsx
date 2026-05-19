@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function PrihlaseniForm() {
+export default function PrihlaseniForm({ next }: { next?: string }) {
   const [email, setEmail] = useState("");
   const [link, setLink] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ export default function PrihlaseniForm() {
     const res = await fetch("/api/auth/request-link", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, next }),
     });
 
     const data = await res.json();

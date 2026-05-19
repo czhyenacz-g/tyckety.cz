@@ -26,10 +26,9 @@ export default async function EventDetail({
 }: {
   params: Promise<{ eventId: string }>;
 }) {
-  const session = await getSession();
-  if (!session) redirect("/prihlaseni");
-
   const { eventId } = await params;
+  const session = await getSession();
+  if (!session) redirect(`/prihlaseni?next=/app/akce/${eventId}`);
   const { organizer } = session;
 
   // Lazy expiration před načtením statistik

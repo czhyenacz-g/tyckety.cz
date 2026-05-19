@@ -9,12 +9,12 @@ export const metadata: Metadata = { robots: { index: false } };
 export default async function Prihlaseni({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const session = await getSession();
   if (session) redirect("/app");
 
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
 
   return (
     <>
@@ -30,7 +30,7 @@ export default async function Prihlaseni({
               Odkaz vypršel nebo byl již použit.
             </p>
           )}
-          <PrihlaseniForm />
+          <PrihlaseniForm next={next} />
         </div>
       </main>
     </>

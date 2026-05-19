@@ -16,7 +16,7 @@ function czk(n: number) {
 
 export default async function InternalPage() {
   const session = await getSession();
-  if (!session || !isSuperAdmin(session.organizer.email)) redirect("/prihlaseni");
+  if (!session || !isSuperAdmin(session.organizer.email)) redirect("/prihlaseni?next=/internal");
 
   const now = new Date();
 
