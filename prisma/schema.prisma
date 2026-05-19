@@ -158,20 +158,32 @@ enum PaymentRecordStatus {
   matched
   excess
   partial
+  amount_mismatch
+  unknown_symbol
+  missing_symbol
+  late_payment
+  already_paid
 }
 
 model PaymentRecord {
-  id             String              @id @default(uuid())
-  organizerId    String
-  orderId        String?
-  amountCzk      Int
-  variableSymbol String
-  status         PaymentRecordStatus @default(unmatched)
-  note           String?
-  createdAt      DateTime            @default(now())
+  id                  String              @id @default(uuid())
+  organizerId         String
+  orderId             String?
+  amountCzk           Int
+  variableSymbol      String
+  status              PaymentRecordStatus @default(unmatched)
+  note                String?
+  transactionId       String?
+  paymentDate         DateTime?
+  counterpartyAccount String?
+  counterpartyName    String?
+  source              String              @default("manual")
+  createdAt           DateTime            @default(now())
 
   organizer Organizer @relation(fields: [organizerId], references: [id])
   order     Order?    @relation(fields: [orderId], references: [id])
+
+  @@index([organizerId, transactionId])
 }
 
 // ─── ScanAccessToken ──────────────────────────────────────────────────────────

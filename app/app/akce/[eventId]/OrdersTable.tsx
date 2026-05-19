@@ -12,6 +12,12 @@ type OrderStatus =
   | "payment_received_late"
   | "manual_review";
 
+interface PaymentInfo {
+  status: string;
+  paymentDate: Date | null;
+  amountCzk: number;
+}
+
 interface Order {
   id: string;
   buyerName: string;
@@ -23,6 +29,7 @@ interface Order {
   publicToken: string;
   createdAt: Date;
   ticketCount: number;
+  payment: PaymentInfo | null;
 }
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -79,6 +86,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
             <th className="pb-3 pr-4">Zákazník</th>
             <th className="pb-3 pr-4">VS</th>
             <th className="pb-3 pr-4">Částka</th>
+            <th className="pb-3 pr-4">Platba</th>
             <th className="pb-3 pr-4">Vstupenky</th>
             <th className="pb-3 pr-4">Stav</th>
             <th className="pb-3">Akce</th>
@@ -86,7 +94,10 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
         </thead>
         <tbody className="divide-y divide-gray-700/50">
           {orders.map((o) => (
-            <tr key={o.id} className="py-3">
+            <tr
+              key={o.id}
+              className={`py-3 ${o.payment?.status === "amount_mismatch" ? "bg-red-950/20" : ""}`}
+            >
               <td className="py-3 pr-4">
                 <a
                   href={`/objednavka/${o.publicToken}`}
@@ -101,6 +112,23 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
               <td className="py-3 pr-4 font-mono text-gray-400 text-xs">{o.variableSymbol}</td>
               <td className="py-3 pr-4 text-amber-400 font-semibold">
                 {o.totalAmountCzk.toLocaleString("cs-CZ")} Kč
+              </td>
+              <td className="py-3 pr-4 text-xs">
+                {o.payment?.status === "matched" && (
+                  <span className="text-green-400">&#10003; {o.payment.amountCzk.toLocaleString("cs-CZ")} Kč</span>
+                )}
+                {o.payment?.status === "amount_mismatch" && (
+                  <span className="text-red-400">! {o.payment.amountCzk.toLocaleString("cs-CZ")} Kč</span>
+                )}
+                {o.payment?.status === "late_payment" && (
+                  <span className="text-blue-400">Pozdní</span>
+                )}
+                {o.payment?.status === "already_paid" && (
+                  <span className="text-gray-500">Duplikát</span>
+                )}
+                {(!o.payment || !["matched", "amount_mismatch", "late_payment", "already_paid"].includes(o.payment.status)) && (
+                  <span className="text-gray-600">—</span>
+                )}
               </td>
               <td className="py-3 pr-4 text-gray-400">{o.ticketCount > 0 ? o.ticketCount : o.quantity} ks</td>
               <td className="py-3 pr-4">

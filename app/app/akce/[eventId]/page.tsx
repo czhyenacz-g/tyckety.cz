@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { expireStaleOrders, getReservedCount } from "@/lib/orders";
 import AppHeader from "@/app/components/AppHeader";
+import CsvImportForm from "./CsvImportForm";
 import OrdersTable from "./OrdersTable";
 import StatusButton from "./StatusButton";
 
@@ -53,6 +54,11 @@ export default async function EventDetail({
             publicToken: true,
             createdAt: true,
             _count: { select: { tickets: true } },
+            paymentRecords: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              select: { status: true, paymentDate: true, amountCzk: true },
+            },
           },
           orderBy: { createdAt: "desc" },
         },
@@ -82,18 +88,35 @@ export default async function EventDetail({
     .filter((o) => o.status === "paid" || o.status === "tickets_issued")
     .reduce((s, o) => s + o.totalAmountCzk, 0);
 
-  const orders = event.orders.map((o) => ({
-    id: o.id,
-    buyerName: o.buyerName,
-    buyerEmail: o.buyerEmail,
-    status: o.status,
-    quantity: o.quantity,
-    totalAmountCzk: o.totalAmountCzk,
-    variableSymbol: o.variableSymbol,
-    publicToken: o.publicToken,
-    createdAt: o.createdAt,
-    ticketCount: o._count.tickets,
-  }));
+  const STATUS_PRIORITY: Record<string, number> = {
+    manual_review: 0,
+    awaiting_payment: 1,
+    payment_window_expired: 2,
+    payment_received_late: 3,
+    paid: 4,
+    tickets_issued: 5,
+    expired: 6,
+  };
+
+  const orders = event.orders
+    .map((o) => ({
+      id: o.id,
+      buyerName: o.buyerName,
+      buyerEmail: o.buyerEmail,
+      status: o.status,
+      quantity: o.quantity,
+      totalAmountCzk: o.totalAmountCzk,
+      variableSymbol: o.variableSymbol,
+      publicToken: o.publicToken,
+      createdAt: o.createdAt,
+      ticketCount: o._count.tickets,
+      payment: o.paymentRecords[0] ?? null,
+    }))
+    .sort((a, b) => {
+      const aPriority = a.payment?.status === "amount_mismatch" ? -1 : (STATUS_PRIORITY[a.status] ?? 9);
+      const bPriority = b.payment?.status === "amount_mismatch" ? -1 : (STATUS_PRIORITY[b.status] ?? 9);
+      return aPriority - bPriority || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   const publicUrl = `/${event.organizer.slug}/${event.slug}`;
   const scanUrl = scanToken ? `/scan/${scanToken.token}` : null;
@@ -218,6 +241,8 @@ export default async function EventDetail({
             </code>
           </div>
         </details>
+
+        <CsvImportForm eventId={event.id} />
 
         {/* Objednávky */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
