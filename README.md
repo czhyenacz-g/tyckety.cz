@@ -72,15 +72,29 @@ Ve stejné tabulce klikni **"Vystavit vstupenky"** (zobrazí se po označení ja
 
 ```bash
 npm install
-# nastav .env s DATABASE_URL
+# nastav .env.local s DATABASE_URL + DIRECT_URL
 npx prisma db push
 npm run dev
 ```
 
 ## TODO pro produkci
 
-- [ ] Odeslání magic link e-mailem (Resend.com)
 - [ ] Automatické párování plateb (fio.cz API)
 - [ ] PDF vstupenky
 - [ ] Kamera QR scan u vstupu (html5-qrcode nebo jsQR)
-- [ ] Notifikace pořadateli při nové objednávce
+
+---
+
+## Documentation
+
+Technická a provozní dokumentace v `docs/`:
+
+| Soubor | Obsah |
+|--------|-------|
+| [`docs/CLAUDE.md`](docs/CLAUDE.md) | **Začni zde** — instrukce pro Claude Code, guardrails, příkazy |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Stack, datový model, auth, kapacitní model |
+| [`docs/FLOWS.md`](docs/FLOWS.md) | Hlavní flows krok za krokem |
+| [`docs/ROUTES.md`](docs/ROUTES.md) | Tabulka všech rout + API endpointů |
+| [`docs/EMAILS.md`](docs/EMAILS.md) | Email implementace, Resend, šablony, doručitelnost |
+| [`docs/OPERATIONS.md`](docs/OPERATIONS.md) | Env proměnné, seed, deploy, provozní postupy |
+| [`docs/TESTING.md`](docs/TESTING.md) | Testovací checklisty |
