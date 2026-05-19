@@ -68,7 +68,7 @@ export default function Home() {
               {/* Demo disclaimer */}
               <p className="text-gray-600 text-xs leading-relaxed border-t border-gray-800 pt-4">
                 Tohle je <strong className="text-white">demo akce</strong> vytvořená v Tyckety. Koupí testovacího lístku nevzniká nárok
-                na vstup na skutečný koncert. Pokud lístek koupíte, berte to jako <strong className="text-white">podporu</strong> vývoje <strong className="text-white">projektu</strong>.
+                na vstup na skutečný koncert. Pokud lístek koupíte, bereme to jako <strong className="text-white">podporu</strong> vývoje <strong className="text-white">projektu</strong>. Děkujeme.
               </p>
             </div>
           </div>
