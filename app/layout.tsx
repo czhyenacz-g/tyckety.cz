@@ -5,20 +5,22 @@ import Script from "next/script";
 import { GOATCOUNTER_CODE } from "./config/analytics";
 
 export const metadata: Metadata = {
-  title: "Tyckety.cz — vstupenky pro malé akce",
-  description: "Vstupenky pro malé akce bez velkého ticketingu. Zákazník zaplatí QR kódem na váš účet, u vstupu ověříte lístek mobilem.",
+  title: "TEST — Heavy metal koncert | Tyckety.cz",
+  description: "Ukázková koncertní stránka vytvořená v Tyckety. Vstupenky přes QR platbu a ověření mobilem.",
   openGraph: {
-    title: "Tyckety.cz — vstupenky pro malé akce",
-    description: "Vstupenky pro malé akce bez velkého ticketingu. Zákazník zaplatí QR kódem na váš účet, u vstupu ověříte lístek mobilem.",
+    title: "TEST — Heavy metal koncert | Tyckety.cz",
+    description: "Ukázková koncertní stránka vytvořená v Tyckety. Vstupenky přes QR platbu a ověření mobilem.",
     url: "https://tyckety.cz",
     siteName: "Tyckety.cz",
     locale: "cs_CZ",
     type: "website",
+    images: [{ url: "https://tyckety.cz/images/test_koncert_web.webp" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tyckety.cz — vstupenky pro malé akce",
-    description: "Vstupenky pro malé akce bez velkého ticketingu. Zákazník zaplatí QR kódem na váš účet, u vstupu ověříte lístek mobilem.",
+    title: "TEST — Heavy metal koncert | Tyckety.cz",
+    description: "Ukázková koncertní stránka vytvořená v Tyckety. Vstupenky přes QR platbu a ověření mobilem.",
+    images: ["https://tyckety.cz/images/test_koncert_web.webp"],
   },
 };
 

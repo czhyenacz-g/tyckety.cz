@@ -1,109 +1,128 @@
 import Link from "next/link";
+import Image from "next/image";
 import Nav from "./components/Nav";
 
-const benefits = [
-  {
-    icon: "🏦",
-    title: "Platba QR kódem na váš účet",
-    description:
-      "Zákazník naskenuje QR kód a zaplatí přes svou bankovní aplikaci rovnou vám. Peníze jdou přímo — bez prostředníka, bez poplatků za transakce.",
-  },
-  {
-    icon: "📱",
-    title: "Kontrola u vstupu mobilem",
-    description:
-      "Každá vstupenka má unikátní QR kód. U vstupu ho ověříte na telefonu — jednoduše, bez speciálního hardwaru.",
-  },
-  {
-    icon: "🌱",
-    title: "Teď bez poplatků",
-    description:
-      "Tyckety je čerstvé MVP pro malé akce. Ceník necháme na později — teď hlavně chceme, aby to fungovalo.",
-  },
-];
+const DEMO_URL = "/demo-podnik/test-heavy-metal-koncert";
 
 export default function Home() {
   return (
     <>
       <Nav />
       <main className="min-h-screen">
-        {/* Hero */}
-        <section className="px-4 pt-24 pb-20 text-center">
-          <div className="max-w-2xl mx-auto">
-            <p className="text-amber-400 text-sm font-medium uppercase tracking-widest mb-6">
-              Pro malé pořadatele
-            </p>
-            <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-6">
-              Vstupenky pro malé akce
-              <br />
-              <span className="text-amber-400">bez velkého ticketingu</span>
-            </h1>
-            <p className="text-gray-400 text-lg mb-10 max-w-xl mx-auto">
-              Vytvoříte akci, zákazník zaplatí QR kódem na váš účet a u vstupu
-              jen ověříte lístek mobilem.
-            </p>
-            <Link
-              href="/prihlaseni"
-              className="inline-block bg-amber-500 hover:bg-amber-400 text-gray-900 font-semibold px-8 py-3 rounded-lg transition-colors text-base"
-            >
-              Vytvořit první akci →
-            </Link>
-            <p className="text-gray-600 text-sm mt-4">
-              Bez registrace zákazníků · Teď bez poplatků
-            </p>
-          </div>
-        </section>
 
-        {/* Benefits */}
-        <section className="px-4 pb-24">
-          <div className="max-w-4xl mx-auto grid sm:grid-cols-3 gap-6">
-            {benefits.map((b) => (
-              <div
-                key={b.title}
-                className="bg-gray-800 border border-gray-700 rounded-xl p-6"
-              >
-                <div className="text-3xl mb-4">{b.icon}</div>
-                <h3 className="font-semibold text-white mb-2">{b.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  {b.description}
+        {/* ── Hero: demo concert ── */}
+        <section className="px-4 pt-16 pb-12">
+          <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-10 items-center">
+
+            {/* Plakát */}
+            <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black/60">
+              <Image
+                src="/images/test_koncert_web.webp"
+                alt="Plakát — TEST Heavy metal koncert"
+                width={600}
+                height={848}
+                className="w-full h-auto"
+                priority
+              />
+            </div>
+
+            {/* Info */}
+            <div className="flex flex-col gap-5">
+              <div>
+                <p className="text-amber-400 text-xs font-semibold uppercase tracking-widest mb-3">
+                  Ukázková akce · Tyckety.cz
                 </p>
+                <h1 className="text-4xl sm:text-5xl font-black leading-tight mb-4">
+                  TEST —<br />
+                  <span className="text-amber-400">Heavy metal</span><br />
+                  koncert
+                </h1>
+                <div className="space-y-1 text-gray-300 text-sm">
+                  <p>📅 24. října 2026 · 19:00</p>
+                  <p>📍 Klub Inferno, Praha</p>
+                  <p>🎟 Základní vstupenka — 390 Kč</p>
+                </div>
               </div>
-            ))}
+
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Nezaměnitelná atmosféra, basy co otřásají zdmi a pět kapel nabitých riffama.
+                Tohle není koncert pro slabé povahy — přijďte si vyčistit hlavu a nechat se rozdrtit hudbou.
+              </p>
+
+              {/* CTA */}
+              <div className="flex flex-col gap-3">
+                <Link
+                  href={DEMO_URL}
+                  className="inline-block text-center bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-6 py-3.5 rounded-xl transition-colors text-base"
+                >
+                  Vyzkoušet nákup lístku →
+                </Link>
+                <Link
+                  href="/prihlaseni"
+                  className="inline-block text-center border border-gray-600 hover:border-gray-400 text-gray-300 hover:text-white font-medium px-6 py-3 rounded-xl transition-colors text-sm"
+                >
+                  Chci takovou stránku pro vlastní akci
+                </Link>
+              </div>
+
+              {/* Demo disclaimer */}
+              <p className="text-gray-600 text-xs leading-relaxed border-t border-gray-800 pt-4">
+                Tohle je demo akce vytvořená v Tyckety. Koupí testovacího lístku nevzniká nárok
+                na vstup na skutečný koncert. Pokud lístek koupíte, berte to jako podporu vývoje projektu.
+              </p>
+            </div>
           </div>
         </section>
 
-        {/* CTA band */}
-        <section className="border-t border-gray-800 px-4 py-16 text-center">
-          <div className="max-w-xl mx-auto">
-            <h2 className="text-2xl font-bold mb-3">Připraveni začít?</h2>
-            <p className="text-gray-400 mb-8">
-              Zaregistrujte se a mějte první akci online dřív, než si uvaříte kávu.
+        {/* ── Product explanation ── */}
+        <section className="border-t border-gray-800 px-4 py-16">
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-amber-400 text-xs font-semibold uppercase tracking-widest mb-4">
+              Pro pořadatele
             </p>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+              Tuhle stránku si můžete udělat pro vlastní akci
+            </h2>
+            <p className="text-gray-400 mb-10 max-w-lg mx-auto">
+              Vstupenky pro malé akce bez velkého ticketingu. Bez platební brány, bez registrace zákazníků.
+            </p>
+
+            <div className="grid sm:grid-cols-4 gap-4 mb-10 text-left">
+              {[
+                { n: "1", text: "Vytvoříte akci a nastavíte cenu" },
+                { n: "2", text: "Zákazník zaplatí QR kódem přímo na váš účet" },
+                { n: "3", text: "Systém vygeneruje QR vstupenku a pošle ji e-mailem" },
+                { n: "4", text: "U vstupu ověříte lístek mobilem" },
+              ].map((s) => (
+                <div key={s.n} className="bg-gray-800 border border-gray-700 rounded-xl p-4">
+                  <p className="text-amber-400 text-2xl font-black mb-2">{s.n}</p>
+                  <p className="text-gray-300 text-sm leading-snug">{s.text}</p>
+                </div>
+              ))}
+            </div>
+
             <Link
               href="/prihlaseni"
-              className="inline-block bg-amber-500 hover:bg-amber-400 text-gray-900 font-semibold px-8 py-3 rounded-lg transition-colors"
+              className="inline-block bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-8 py-3.5 rounded-xl transition-colors"
             >
-              Začít →
+              Vytvořit vlastní akci →
             </Link>
+            <p className="text-gray-600 text-xs mt-3">Teď bez poplatků · MVP ve vývoji</p>
           </div>
         </section>
 
-        {/* Disclaimer */}
-        <section className="border-t border-gray-800 px-4 py-8 text-center">
-          <p className="text-gray-600 text-xs max-w-xl mx-auto leading-relaxed">
-            Tyckety je nástroj pro vytvoření a kontrolu vstupenek. Pořadatel odpovídá za akci,
-            ceny, kapacitu, přijetí plateb, vrácení peněz a komunikaci se zákazníky.
-          </p>
-        </section>
       </main>
 
-      <footer className="border-t border-gray-800 px-4 py-6 text-center text-gray-600 text-sm">
-        <div className="flex items-center justify-center gap-4">
+      <footer className="border-t border-gray-800 px-4 py-6 text-center text-gray-600 text-xs">
+        <div className="flex items-center justify-center gap-4 mb-2">
           <span>© {new Date().getFullYear()} Tyckety.cz</span>
           <Link href="/podminky" className="hover:text-gray-400 transition-colors">
             Podmínky
           </Link>
         </div>
+        <p className="max-w-md mx-auto text-gray-700">
+          Tyckety není pořadatel akce. U demo akce jde o ukázku produktu a podporu vývoje.
+        </p>
       </footer>
     </>
   );
