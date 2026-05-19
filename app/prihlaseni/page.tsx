@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import Nav from "@/app/components/Nav";
 import PrihlaseniForm from "./PrihlaseniForm";
+
+export const metadata: Metadata = { robots: { index: false } };
 
 export default async function Prihlaseni({
   searchParams,

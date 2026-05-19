@@ -1,13 +1,45 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import Nav from "@/app/components/Nav";
 import { db } from "@/lib/db";
 import PurchaseForm from "./PurchaseForm";
 
+type Props = { params: Promise<{ organizerSlug: string; eventSlug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { organizerSlug, eventSlug } = await params;
+  const event = await db.event.findFirst({
+    where: { slug: eventSlug, status: "published", organizer: { slug: organizerSlug } },
+    select: { title: true, description: true, startsAt: true, venueName: true },
+  });
+  if (!event) return {};
+
+  const dateStr = new Date(event.startsAt).toLocaleDateString("cs-CZ", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const desc = event.description
+    ? event.description.slice(0, 155)
+    : `${dateStr}${event.venueName ? ` · ${event.venueName}` : ""} — kupte vstupenky online.`;
+
+  return {
+    title: `${event.title} | Tyckety.cz`,
+    description: desc,
+    openGraph: {
+      title: event.title,
+      description: desc,
+      type: "website",
+      locale: "cs_CZ",
+      siteName: "Tyckety.cz",
+    },
+    twitter: { card: "summary", title: event.title, description: desc },
+  };
+}
+
 export default async function EventPage({
   params,
-}: {
-  params: Promise<{ organizerSlug: string; eventSlug: string }>;
-}) {
+}: Props) {
   const { organizerSlug, eventSlug } = await params;
 
   const event = await db.event.findFirst({

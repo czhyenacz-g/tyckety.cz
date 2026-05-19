@@ -1,13 +1,31 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import Nav from "@/app/components/Nav";
 
-export default async function OrganizerPage({
-  params,
-}: {
-  params: Promise<{ organizerSlug: string }>;
-}) {
+type Props = { params: Promise<{ organizerSlug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { organizerSlug } = await params;
+  const organizer = await db.organizer.findUnique({
+    where: { slug: organizerSlug },
+    select: { name: true },
+  });
+  if (!organizer) return {};
+  return {
+    title: `${organizer.name} — vstupenky | Tyckety.cz`,
+    description: `Kupte vstupenky na akce pořadatele ${organizer.name} přímo online na Tyckety.cz.`,
+    openGraph: {
+      title: `${organizer.name} | Tyckety.cz`,
+      description: `Vstupenky na akce — ${organizer.name}`,
+      locale: "cs_CZ",
+      siteName: "Tyckety.cz",
+    },
+  };
+}
+
+export default async function OrganizerPage({ params }: Props) {
   const { organizerSlug } = await params;
 
   const organizer = await db.organizer.findUnique({

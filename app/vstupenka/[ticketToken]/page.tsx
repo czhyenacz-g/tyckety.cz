@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import QRCode from "qrcode";
+
+export const metadata: Metadata = { robots: { index: false } };
 import { db } from "@/lib/db";
 import Nav from "@/app/components/Nav";
 
