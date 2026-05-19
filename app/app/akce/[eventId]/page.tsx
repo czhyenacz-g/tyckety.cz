@@ -153,11 +153,12 @@ export default async function EventDetail({
           ))}
         </div>
 
-        {/* Links + info */}
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          {/* Veřejný odkaz */}
-          <InfoCard title="Odkaz pro zákazníky">
-            <p className="text-xs text-gray-500 mb-2">Sdílejte tento odkaz pro prodej vstupenek.</p>
+        {/* Hlavní 3 kroky */}
+        <div className="grid md:grid-cols-3 gap-4 mb-4">
+          {/* 1. Odkaz pro zákazníky */}
+          <div className="bg-gray-800 border border-amber-700/40 rounded-xl p-5">
+            <p className="text-xs text-amber-400 font-semibold uppercase tracking-wide mb-1">1 · Sdílejte zákazníkům</p>
+            <h3 className="text-sm font-semibold text-gray-200 mb-3">Stránka akce</h3>
             {event.status !== "published" && (
               <p className="text-amber-400 text-xs mb-2">Akce není zveřejněna — odkaz zatím nefunguje.</p>
             )}
@@ -169,11 +170,12 @@ export default async function EventDetail({
             >
               tyckety.cz{publicUrl}
             </a>
-          </InfoCard>
+          </div>
 
-          {/* Scan odkaz */}
-          <InfoCard title="Vstupní kontrola (QR skener)">
-            <p className="text-xs text-gray-500 mb-2">Otevřete na telefonu pro skenování lístků u vstupu.</p>
+          {/* 2. Scan odkaz */}
+          <div className="bg-gray-800 border border-amber-700/40 rounded-xl p-5">
+            <p className="text-xs text-amber-400 font-semibold uppercase tracking-wide mb-1">2 · U vstupu</p>
+            <h3 className="text-sm font-semibold text-gray-200 mb-3">Kontrola vstupenek</h3>
             {scanUrl ? (
               <a
                 href={scanUrl}
@@ -186,33 +188,37 @@ export default async function EventDetail({
             ) : (
               <p className="text-gray-500 text-sm">Scan token nebyl vygenerován.</p>
             )}
-          </InfoCard>
+          </div>
 
-          {/* Embed kód */}
-          <InfoCard title="Embed pro váš web">
-            <p className="text-xs text-gray-500 mb-2">Vložte iframe na svůj web pro prodej přímo ze stránek.</p>
-            <code className="block text-xs text-green-400 bg-gray-900 rounded px-3 py-2 break-all select-all">
-              {iframeCode}
-            </code>
-          </InfoCard>
-
-          {/* Kategorie vstupenek */}
-          <InfoCard title="Kategorie vstupenek">
+          {/* 3. Kategorie */}
+          <div className="bg-gray-800 border border-amber-700/40 rounded-xl p-5">
+            <p className="text-xs text-amber-400 font-semibold uppercase tracking-wide mb-1">3 · Vstupenky</p>
+            <h3 className="text-sm font-semibold text-gray-200 mb-3">Kategorie</h3>
             {category ? (
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">{category.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {category.priceCzk.toLocaleString("cs-CZ")} Kč · kapacita {category.capacity}
-                  </p>
-                </div>
-                <span className="text-xs text-gray-400">{category.soldCount} prodáno</span>
+              <div>
+                <p className="text-sm font-medium">{category.name}</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {category.priceCzk.toLocaleString("cs-CZ")} Kč · kapacita {category.capacity} · {category.soldCount} prodáno
+                </p>
               </div>
             ) : (
               <p className="text-gray-500 text-sm">Žádná kategorie.</p>
             )}
-          </InfoCard>
+          </div>
         </div>
+
+        {/* Embed — pokročilé */}
+        <details className="mb-6 group">
+          <summary className="cursor-pointer text-xs text-gray-500 hover:text-gray-400 transition-colors select-none py-1">
+            Embed pro váš web (pokročilé) ›
+          </summary>
+          <div className="mt-3 bg-gray-800 border border-gray-700 rounded-xl p-5">
+            <p className="text-xs text-gray-500 mb-2">Vložte iframe přímo na svůj web — formulář se zobrazí na vaší stránce.</p>
+            <code className="block text-xs text-green-400 bg-gray-900 rounded px-3 py-2 break-all select-all">
+              {iframeCode}
+            </code>
+          </div>
+        </details>
 
         {/* Objednávky */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">

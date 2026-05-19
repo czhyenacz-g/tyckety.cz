@@ -5,11 +5,11 @@ import Script from "next/script";
 import { GOATCOUNTER_CODE } from "./config/analytics";
 
 export const metadata: Metadata = {
-  title: "Tyckety.cz",
-  description: "Vstupenky na váš web za pár minut. Bez platební brány, platba QR kódem.",
+  title: "Tyckety.cz — vstupenky pro malé akce",
+  description: "Vstupenky pro malé akce bez velkého ticketingu. Zákazník zaplatí QR kódem na váš účet, u vstupu ověříte lístek mobilem.",
   openGraph: {
-    title: "Tyckety.cz",
-    description: "Vstupenky na váš web za pár minut. Bez platební brány, platba QR kódem.",
+    title: "Tyckety.cz — vstupenky pro malé akce",
+    description: "Vstupenky pro malé akce bez velkého ticketingu. Zákazník zaplatí QR kódem na váš účet, u vstupu ověříte lístek mobilem.",
     url: "https://tyckety.cz",
     siteName: "Tyckety.cz",
     locale: "cs_CZ",
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tyckety.cz",
-    description: "Vstupenky na váš web za pár minut. Bez platební brány, platba QR kódem.",
+    title: "Tyckety.cz — vstupenky pro malé akce",
+    description: "Vstupenky pro malé akce bez velkého ticketingu. Zákazník zaplatí QR kódem na váš účet, u vstupu ověříte lístek mobilem.",
   },
 };
 
