@@ -6,10 +6,10 @@ import { GOATCOUNTER_CODE } from "./config/analytics";
 
 export const metadata: Metadata = {
   title: "Tyckety.cz",
-  description: "Lístky na akce snadno a rychle",
+  description: "Vstupenky na váš web za pár minut. Bez platební brány, platba QR kódem.",
   openGraph: {
     title: "Tyckety.cz",
-    description: "Lístky na akce snadno a rychle",
+    description: "Vstupenky na váš web za pár minut. Bez platební brány, platba QR kódem.",
     url: "https://tyckety.cz",
     siteName: "Tyckety.cz",
     locale: "cs_CZ",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Tyckety.cz",
-    description: "Lístky na akce snadno a rychle",
+    description: "Vstupenky na váš web za pár minut. Bez platební brány, platba QR kódem.",
   },
 };
 
