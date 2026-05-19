@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AppHeader from "@/app/components/AppHeader";
+import OrdersTable from "./OrdersTable";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Koncept",
@@ -34,7 +35,10 @@ export default async function EventDetail({
     include: {
       ticketCategories: true,
       scanTokens: { where: { active: true }, take: 1 },
-      _count: { select: { orders: true } },
+      orders: {
+        include: { _count: { select: { tickets: true } } },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
@@ -46,11 +50,24 @@ export default async function EventDetail({
   const capacity = event.ticketCategories.reduce((s, c) => s + c.capacity, 0);
   const revenue = event.ticketCategories.reduce((s, c) => s + c.soldCount * c.priceCzk, 0);
 
+  const orders = event.orders.map((o) => ({
+    id: o.id,
+    buyerName: o.buyerName,
+    buyerEmail: o.buyerEmail,
+    status: o.status,
+    totalAmountCzk: o.totalAmountCzk,
+    variableSymbol: o.variableSymbol,
+    publicToken: o.publicToken,
+    createdAt: o.createdAt,
+    ticketCount: o._count.tickets,
+  }));
+
   const publicUrl = `/objednavka/${event.slug}`;
   const scanUrl = scanToken ? `/scan/${scanToken.token}` : null;
   const embedCode = `<script src="https://tyckety.cz/widget.js" data-event="${event.slug}"></script>`;
 
   const statusColor = STATUS_COLOR[event.status] ?? STATUS_COLOR.draft;
+  const orderCount = event.orders.length;
 
   return (
     <>
@@ -87,7 +104,7 @@ export default async function EventDetail({
           {/* Stats */}
           {[
             { label: "Prodáno", value: `${sold}/${capacity}` },
-            { label: "Objednávky", value: event._count.orders },
+            { label: "Objednávky", value: orderCount },
             { label: "Příjmy (Kč)", value: revenue.toLocaleString("cs-CZ") },
           ].map((s) => (
             <div key={s.label} className="bg-gray-800 border border-gray-700 rounded-xl p-4 text-center">
@@ -153,9 +170,7 @@ export default async function EventDetail({
         {/* Objednávky */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
           <h2 className="font-semibold mb-4">Objednávky</h2>
-          <div className="text-center py-8 text-gray-500 text-sm">
-            Žádné objednávky zatím. Prodej zde bude automaticky zobrazen po zveřejnění akce.
-          </div>
+          <OrdersTable orders={orders} />
         </div>
       </main>
     </>
