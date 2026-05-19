@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-export default function Nav() {
+export default function Nav({ className }: { className?: string } = {}) {
   return (
-    <nav className="border-b border-gray-800 px-4 py-4">
+    <nav className={`border-b border-gray-800 px-4 py-4${className ? ` ${className}` : ""}`}>
       <div className="max-w-5xl mx-auto flex items-center justify-between">
         <Link href="/" className="text-lg font-bold text-amber-400 tracking-tight">
           Tyckety.cz
