@@ -12,10 +12,38 @@ type EventRow = {
   slug: string;
   startsAt: string;
   status: string;
-  sold: number;
   capacity: number;
-  pendingOrders: number;
+  reserved: number;
+  paidOrderCount: number;
+  issuedTickets: number;
+  usedTickets: number;
+  available: number;
+  confirmedRevenue: number;
+  pendingRevenue: number;
 };
+
+const statusLabel: Record<string, string> = {
+  draft: "Draft",
+  published: "Publikovaná",
+  cancelled: "Zrušená",
+  ended: "Ukončená",
+};
+
+const statusBadge: Record<string, string> = {
+  draft: "text-gray-400 bg-gray-700/50 border-gray-600",
+  published: "text-green-400 bg-green-900/30 border-green-800",
+  cancelled: "text-red-400 bg-red-900/30 border-red-800",
+  ended: "text-yellow-400 bg-yellow-900/30 border-yellow-800",
+};
+
+function czk(n: number) {
+  if (n === 0) return "—";
+  return n.toLocaleString("cs-CZ") + " Kč";
+}
+
+function Num({ n }: { n: number }) {
+  return <span>{n.toLocaleString("cs-CZ")}</span>;
+}
 
 export default function InternalTable({ events }: { events: EventRow[] }) {
   const router = useRouter();
@@ -40,64 +68,159 @@ export default function InternalTable({ events }: { events: EventRow[] }) {
     router.refresh();
   }
 
-  const statusLabel: Record<string, string> = {
-    draft: "Draft",
-    published: "Publikovaná",
-    cancelled: "Zrušená",
-    ended: "Ukončená",
-  };
-
-  const statusColor: Record<string, string> = {
-    draft: "text-gray-400",
-    published: "text-green-400",
-    cancelled: "text-red-400",
-    ended: "text-yellow-400",
-  };
-
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left">
+      <table className="text-sm text-left whitespace-nowrap">
         <thead>
           <tr className="text-gray-500 border-b border-gray-700 text-xs uppercase tracking-wide">
-            <th className="py-2 pr-4">Akce</th>
-            <th className="py-2 pr-4">Pořadatel</th>
-            <th className="py-2 pr-4">Datum</th>
-            <th className="py-2 pr-4">Status</th>
-            <th className="py-2 pr-4">Prodáno/Kapacita</th>
-            <th className="py-2 pr-4">Čekající</th>
-            <th className="py-2 pr-4">Akce</th>
+            <th className="py-2 pr-5">Akce</th>
+            <th className="py-2 pr-5">Pořadatel</th>
+            <th className="py-2 pr-5">Datum</th>
+            <th className="py-2 pr-5">Status</th>
+            <th className="py-2 pr-5 text-right">Kapacita</th>
+            <th className="py-2 pr-5 text-right">Rezervováno</th>
+            <th className="py-2 pr-5 text-right">Zapl. obj.</th>
+            <th className="py-2 pr-5 text-right">Vstupenky</th>
+            <th className="py-2 pr-5 text-right">Použito</th>
+            <th className="py-2 pr-5 text-right">Zbývá</th>
+            <th className="py-2 pr-5 text-right">Tržby potvrzené</th>
+            <th className="py-2 pr-5 text-right">Tržby čekající</th>
+            <th className="py-2">Akce</th>
           </tr>
         </thead>
         <tbody>
           {events.map((ev) => (
-            <tr key={ev.id} className="border-b border-gray-800 hover:bg-gray-800/40">
-              <td className="py-3 pr-4">
-                <div className="font-medium text-white">{ev.title}</div>
+            <tr key={ev.id} className="border-b border-gray-800 hover:bg-gray-800/40 align-top">
+              {/* Akce */}
+              <td className="py-3 pr-5">
+                <div className="font-medium text-white max-w-[180px] truncate" title={ev.title}>
+                  {ev.title}
+                </div>
                 <div className="text-xs text-gray-500 space-x-2 mt-0.5">
-                  <a href={`/${ev.organizerSlug}/${ev.slug}`} target="_blank" className="hover:text-amber-400">
+                  <a
+                    href={`/${ev.organizerSlug}/${ev.slug}`}
+                    target="_blank"
+                    className="hover:text-amber-400"
+                  >
                     Veřejná ↗
                   </a>
-                  <a href={`/app/akce/${ev.id}`} target="_blank" className="hover:text-amber-400">
+                  <a
+                    href={`/app/akce/${ev.id}`}
+                    target="_blank"
+                    className="hover:text-amber-400"
+                  >
                     Admin ↗
                   </a>
                 </div>
               </td>
-              <td className="py-3 pr-4">
-                <div>{ev.organizerName}</div>
+
+              {/* Pořadatel */}
+              <td className="py-3 pr-5">
+                <div className="text-gray-200">{ev.organizerName}</div>
                 <div className="text-xs text-gray-500">{ev.organizerEmail}</div>
               </td>
-              <td className="py-3 pr-4 text-gray-300 whitespace-nowrap">
-                {new Date(ev.startsAt).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric" })}
+
+              {/* Datum */}
+              <td className="py-3 pr-5 text-gray-300">
+                {new Date(ev.startsAt).toLocaleDateString("cs-CZ", {
+                  day: "numeric",
+                  month: "numeric",
+                  year: "numeric",
+                })}
               </td>
-              <td className={`py-3 pr-4 font-medium ${statusColor[ev.status] ?? "text-gray-400"}`}>
-                {statusLabel[ev.status] ?? ev.status}
+
+              {/* Status badge */}
+              <td className="py-3 pr-5">
+                <span
+                  className={`text-xs border rounded-full px-2 py-0.5 font-medium ${statusBadge[ev.status] ?? "text-gray-400 border-gray-600"}`}
+                >
+                  {statusLabel[ev.status] ?? ev.status}
+                </span>
               </td>
-              <td className="py-3 pr-4 text-gray-300">
-                {ev.sold}/{ev.capacity}
+
+              {/* Kapacita */}
+              <td className="py-3 pr-5 text-right text-gray-300">
+                <Num n={ev.capacity} />
               </td>
-              <td className="py-3 pr-4 text-gray-300">{ev.pendingOrders}</td>
-              <td className="py-3 pr-4">
-                <div className="flex flex-wrap gap-1.5">
+
+              {/* Rezervováno */}
+              <td className="py-3 pr-5 text-right text-gray-300">
+                {ev.reserved > 0 ? (
+                  <span className="text-amber-400 font-medium">
+                    <Num n={ev.reserved} />
+                  </span>
+                ) : (
+                  <span className="text-gray-600">—</span>
+                )}
+              </td>
+
+              {/* Zaplaceno objednávek */}
+              <td className="py-3 pr-5 text-right text-gray-300">
+                {ev.paidOrderCount > 0 ? (
+                  <span className="text-green-400 font-medium">
+                    <Num n={ev.paidOrderCount} />
+                  </span>
+                ) : (
+                  <span className="text-gray-600">—</span>
+                )}
+              </td>
+
+              {/* Vygenerované vstupenky */}
+              <td className="py-3 pr-5 text-right text-gray-300">
+                {ev.issuedTickets > 0 ? (
+                  <Num n={ev.issuedTickets} />
+                ) : (
+                  <span className="text-gray-600">—</span>
+                )}
+              </td>
+
+              {/* Použito u vstupu */}
+              <td className="py-3 pr-5 text-right text-gray-300">
+                {ev.usedTickets > 0 ? (
+                  <span className="text-blue-400 font-medium">
+                    <Num n={ev.usedTickets} />
+                  </span>
+                ) : (
+                  <span className="text-gray-600">—</span>
+                )}
+              </td>
+
+              {/* Zbývá volných */}
+              <td className="py-3 pr-5 text-right">
+                <span
+                  className={
+                    ev.available === 0
+                      ? "text-red-400 font-medium"
+                      : ev.available < 10
+                        ? "text-yellow-400 font-medium"
+                        : "text-gray-300"
+                  }
+                >
+                  <Num n={ev.available} />
+                </span>
+              </td>
+
+              {/* Potvrzené tržby */}
+              <td className="py-3 pr-5 text-right">
+                {ev.confirmedRevenue > 0 ? (
+                  <span className="text-green-400 font-medium">{czk(ev.confirmedRevenue)}</span>
+                ) : (
+                  <span className="text-gray-600">—</span>
+                )}
+              </td>
+
+              {/* Čekající tržby */}
+              <td className="py-3 pr-5 text-right">
+                {ev.pendingRevenue > 0 ? (
+                  <span className="text-amber-400">{czk(ev.pendingRevenue)}</span>
+                ) : (
+                  <span className="text-gray-600">—</span>
+                )}
+              </td>
+
+              {/* Akce */}
+              <td className="py-3">
+                <div className="flex flex-col gap-1.5">
                   {ev.status !== "published" && (
                     <Btn
                       label="Publikovat"
@@ -118,7 +241,13 @@ export default function InternalTable({ events }: { events: EventRow[] }) {
                     <Btn
                       label="Zrušit akci"
                       busy={busy === `${ev.id}-status-cancelled`}
-                      onClick={() => setStatus(ev.id, "cancelled", `Opravdu zrušit akci "${ev.title}"? Tato akce je nevratná.`)}
+                      onClick={() =>
+                        setStatus(
+                          ev.id,
+                          "cancelled",
+                          `Opravdu zrušit akci "${ev.title}"? Tato akce je nevratná.`,
+                        )
+                      }
                       color="red"
                     />
                   )}
