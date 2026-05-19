@@ -10,7 +10,7 @@ async function main() {
       name: "Demo Podnik s.r.o.",
       slug: "demo-podnik",
       email: "info@demo-podnik.cz",
-      bankAccount: "1234567890/0800",
+      bankAccount: "8216903002/5500",
       notificationEmail: "notifikace@demo-podnik.cz",
     },
   });
