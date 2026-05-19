@@ -3,6 +3,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import { GOATCOUNTER_CODE } from "./config/analytics";
+import BetaBanner from "./components/BetaBanner";
 
 export const metadata: Metadata = {
   title: "TEST — Heavy metal koncert | Tyckety.cz",
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="cs">
       <body className="bg-gray-900 text-white antialiased">
+        <BetaBanner />
         {children}
         <Analytics />
         {GOATCOUNTER_CODE && (
