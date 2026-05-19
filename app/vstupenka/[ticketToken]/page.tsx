@@ -132,6 +132,12 @@ export default async function TicketPage({
             <Row label="Kategorie" value={ticket.category.name} />
             <Row label="Cena" value={`${ticket.category.priceCzk.toLocaleString("cs-CZ")} Kč`} />
           </div>
+
+          <div className="border-t border-gray-700/50 pt-3 text-center">
+            <a href="/" className="text-xs text-gray-600 hover:text-gray-500 transition-colors">
+              Vstupenka z Tyckety.cz
+            </a>
+          </div>
         </div>
       </main>
     </>

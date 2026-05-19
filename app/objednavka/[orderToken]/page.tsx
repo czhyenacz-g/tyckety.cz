@@ -210,6 +210,12 @@ export default async function OrderPage({
                   </Link>
                 </div>
               </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-700/50 text-center">
+                <Link href="/" className="text-xs text-gray-600 hover:text-gray-500 transition-colors">
+                  Vstupenka z Tyckety.cz
+                </Link>
+              </div>
             </div>
           ))}
 
