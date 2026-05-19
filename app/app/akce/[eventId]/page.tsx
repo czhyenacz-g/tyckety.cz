@@ -58,7 +58,7 @@ export default async function EventDetail({
             paymentRecords: {
               orderBy: { createdAt: "desc" },
               take: 1,
-              select: { status: true, paymentDate: true, amountCzk: true },
+              select: { status: true, paymentDate: true, amountCzk: true, source: true },
             },
           },
           orderBy: { createdAt: "desc" },
