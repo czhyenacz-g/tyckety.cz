@@ -53,6 +53,7 @@ export default async function EventDetail({
             variableSymbol: true,
             publicToken: true,
             createdAt: true,
+            paymentDisplayDeadlineAt: true,
             _count: { select: { tickets: true } },
             paymentRecords: {
               orderBy: { createdAt: "desc" },
@@ -109,6 +110,7 @@ export default async function EventDetail({
       variableSymbol: o.variableSymbol,
       publicToken: o.publicToken,
       createdAt: o.createdAt,
+      paymentDisplayDeadlineAt: o.paymentDisplayDeadlineAt,
       ticketCount: o._count.tickets,
       payment: o.paymentRecords[0] ?? null,
     }))
