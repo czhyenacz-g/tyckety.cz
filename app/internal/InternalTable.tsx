@@ -98,6 +98,12 @@ export default function InternalTable({ events }: { events: EventRow[] }) {
                 </div>
                 <div className="text-xs text-gray-500 space-x-2 mt-0.5">
                   <a
+                    href={`/internal/events/${ev.id}`}
+                    className="hover:text-amber-400 text-amber-600"
+                  >
+                    Detail ↗
+                  </a>
+                  <a
                     href={`/${ev.organizerSlug}/${ev.slug}`}
                     target="_blank"
                     className="hover:text-amber-400"
