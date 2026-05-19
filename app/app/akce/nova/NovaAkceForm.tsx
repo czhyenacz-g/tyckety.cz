@@ -25,6 +25,7 @@ export default function NovaAkceForm({ defaultBankAccount, defaultNotificationEm
       venueName: fd.get("venueName"),
       venueAddress: fd.get("venueAddress"),
       description: fd.get("description"),
+      posterUrl: fd.get("posterUrl"),
       priceCzk: fd.get("priceCzk"),
       capacity: fd.get("capacity"),
       bankAccount: fd.get("bankAccount"),
@@ -70,6 +71,16 @@ export default function NovaAkceForm({ defaultBankAccount, defaultNotificationEm
             placeholder="Stručný popis akce pro návštěvníky…"
             className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-amber-500 transition-colors text-sm resize-none"
           />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-400 mb-1.5">Odkaz na plakát</label>
+          <input
+            type="url"
+            name="posterUrl"
+            placeholder="https://..."
+            className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-amber-500 transition-colors text-sm"
+          />
+          <p className="text-xs text-gray-600 mt-1">Vložte odkaz na obrázek/plakát akce. Upload zatím neřešíme.</p>
         </div>
       </section>
 

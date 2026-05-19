@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Nepřihlášen." }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const { title, startsAt, venueName, venueAddress, description, priceCzk, capacity, bankAccount, notificationEmail } = body;
+  const { title, startsAt, venueName, venueAddress, description, posterUrl, priceCzk, capacity, bankAccount, notificationEmail } = body;
 
   if (!title?.trim() || !startsAt || !venueName?.trim() || !priceCzk || !capacity) {
     return NextResponse.json({ error: "Vyplňte povinná pole." }, { status: 400 });
@@ -26,6 +26,18 @@ export async function POST(req: NextRequest) {
   const cap = Number(capacity);
   if (isNaN(price) || price < 0 || isNaN(cap) || cap < 1) {
     return NextResponse.json({ error: "Neplatná cena nebo kapacita." }, { status: 400 });
+  }
+
+  const posterUrlValue = posterUrl?.trim() || null;
+  if (posterUrlValue) {
+    try {
+      const parsed = new URL(posterUrlValue);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        return NextResponse.json({ error: "Odkaz na plakát musí začínat https:// nebo http://." }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Odkaz na plakát není platná URL adresa." }, { status: 400 });
+    }
   }
 
   // Update organizer contact details if changed
@@ -47,6 +59,7 @@ export async function POST(req: NextRequest) {
       startsAt: new Date(startsAt),
       venueName: venueName.trim(),
       venueAddress: venueAddress?.trim() || null,
+      posterUrl: posterUrlValue,
       status: "draft",
     },
   });
