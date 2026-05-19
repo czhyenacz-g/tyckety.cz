@@ -30,10 +30,15 @@ export async function POST(
     return NextResponse.json({ error: "Vstupenku nelze označit jako použitou.", status: ticket.status }, { status: 409 });
   }
 
-  await db.ticket.update({
-    where: { id: ticket.id },
+  // Podmíněný update — ochrana před race condition při současném skenování
+  const result = await db.ticket.updateMany({
+    where: { id: ticket.id, status: "issued" },
     data: { status: "used", usedAt: new Date() },
   });
+
+  if (result.count === 0) {
+    return NextResponse.json({ error: "Vstupenka již byla použita.", status: "already_used" }, { status: 409 });
+  }
 
   return NextResponse.json({ ok: true });
 }
