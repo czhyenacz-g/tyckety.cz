@@ -50,7 +50,11 @@ export async function POST(req: NextRequest) {
   const link = linkUrl.toString();
 
   const { subject, html } = magicLinkTemplate(link);
-  await enqueueAndTrySend({ type: "magic_link", to: email, subject, html });
+  try {
+    await enqueueAndTrySend({ type: "magic_link", to: email, subject, html });
+  } catch (err) {
+    console.error("[request-link:email]", err);
+  }
 
   const isDev = process.env.NODE_ENV !== "production";
   return NextResponse.json(isDev ? { link } : { ok: true });

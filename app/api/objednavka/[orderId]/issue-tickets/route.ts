@@ -21,8 +21,10 @@ export async function PATCH(
   });
   if (!orderCheck) return NextResponse.json({ error: "Objednávka nenalezena" }, { status: 404 });
 
+  // Step 1: issue tickets — transaction errors isolated here
+  let txResult: { qty: number };
   try {
-    const result = await db.$transaction(async (tx) => {
+    txResult = await db.$transaction(async (tx) => {
       // Znovu načti stav uvnitř transakce — guard proti double-click / race condition
       const order = await tx.order.findUnique({
         where: { id: orderId },
@@ -66,8 +68,23 @@ export async function PATCH(
 
       return { qty };
     });
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message === "already_issued")
+        return NextResponse.json({ error: "Vstupenky již vystaveny" }, { status: 409 });
+      if (err.message === "not_paid")
+        return NextResponse.json({ error: "Objednávka musí být nejprve označena jako zaplacená" }, { status: 409 });
+      if (err.message === "not_found")
+        return NextResponse.json({ error: "Objednávka nenalezena" }, { status: 404 });
+      if (err.message === "no_category")
+        return NextResponse.json({ error: "Kategorie vstupenek nenalezena" }, { status: 500 });
+    }
+    console.error("[issue-tickets]", err);
+    return NextResponse.json({ error: "Interní chyba" }, { status: 500 });
+  }
 
-    // Send email fire-and-forget — never crash ticket issuance
+  // Step 2: send email — completely isolated from ticket issuance errors
+  try {
     const orderData = await db.order.findUnique({
       where: { id: orderId },
       select: {
@@ -100,20 +117,9 @@ export async function PATCH(
         eventId: orderData.event.id,
       });
     }
-
-    return NextResponse.json({ ok: true, qty: result.qty });
   } catch (err) {
-    if (err instanceof Error) {
-      if (err.message === "already_issued")
-        return NextResponse.json({ error: "Vstupenky již vystaveny" }, { status: 409 });
-      if (err.message === "not_paid")
-        return NextResponse.json({ error: "Objednávka musí být nejprve označena jako zaplacená" }, { status: 409 });
-      if (err.message === "not_found")
-        return NextResponse.json({ error: "Objednávka nenalezena" }, { status: 404 });
-      if (err.message === "no_category")
-        return NextResponse.json({ error: "Kategorie vstupenek nenalezena" }, { status: 500 });
-    }
-    console.error("[issue-tickets]", err);
-    return NextResponse.json({ error: "Interní chyba" }, { status: 500 });
+    console.error("[issue-tickets:email]", err);
   }
+
+  return NextResponse.json({ ok: true, qty: txResult.qty });
 }
