@@ -6,11 +6,11 @@ async function main() {
   // 1. Organizer
   const organizer = await db.organizer.upsert({
     where: { slug: "demo-podnik" },
-    update: { bankAccount: "8216903002/5500", notificationEmail: "czhyenacz@gmail.com" },
+    update: { email: "info@tyckety.cz", bankAccount: "8216903002/5500", notificationEmail: "czhyenacz@gmail.com" },
     create: {
       name: "Demo Podnik s.r.o.",
       slug: "demo-podnik",
-      email: "info@demo-podnik.cz",
+      email: "info@tyckety.cz",
       bankAccount: "8216903002/5500",
       notificationEmail: "czhyenacz@gmail.com",
     },
