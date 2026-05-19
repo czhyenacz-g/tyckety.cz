@@ -15,12 +15,27 @@
       "Bash(source *)",
       "Bash(curl *)",
       "Bash(python3 *)",
+      "Bash(vercel *)",
+      "Bash(gh *)",
       "Bash(brew *)",
       "Bash(which *)",
       "Bash(echo *)",
       "WebFetch(domain:localhost)",
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:api.vercel.com)"
+    ],
+    "ask": [
+      "Bash(git branch -D *)",
+      "Bash(git branch -d *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git push * --force*)",
+      "Bash(git push * --delete*)",
+      "Bash(git push origin --delete*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(vercel remove*)",
+      "Bash(vercel rm *)"
     ],
     "deny": []
   }

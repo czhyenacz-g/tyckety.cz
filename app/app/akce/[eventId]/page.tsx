@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AppHeader from "@/app/components/AppHeader";
 import OrdersTable from "./OrdersTable";
+import StatusButton from "./StatusButton";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Koncept",
@@ -30,25 +31,54 @@ export default async function EventDetail({
   const { eventId } = await params;
   const { organizer } = session;
 
-  const event = await db.event.findFirst({
-    where: { id: eventId, organizerId: organizer.id },
-    include: {
-      ticketCategories: true,
-      scanTokens: { where: { active: true }, take: 1 },
-      orders: {
-        include: { _count: { select: { tickets: true } } },
-        orderBy: { createdAt: "desc" },
+  const [event, ticketCounts] = await Promise.all([
+    db.event.findFirst({
+      where: { id: eventId, organizerId: organizer.id },
+      include: {
+        organizer: { select: { slug: true } },
+        ticketCategories: true,
+        scanTokens: { where: { active: true }, take: 1 },
+        orders: {
+          select: {
+            id: true,
+            buyerName: true,
+            buyerEmail: true,
+            status: true,
+            totalAmountCzk: true,
+            variableSymbol: true,
+            publicToken: true,
+            createdAt: true,
+            _count: { select: { tickets: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
       },
-    },
-  });
+    }),
+    db.ticket.groupBy({
+      by: ["status"],
+      where: { eventId },
+      _count: { id: true },
+    }),
+  ]);
 
   if (!event) notFound();
 
   const category = event.ticketCategories[0];
   const scanToken = event.scanTokens[0];
-  const sold = event.ticketCategories.reduce((s, c) => s + c.soldCount, 0);
+
   const capacity = event.ticketCategories.reduce((s, c) => s + c.capacity, 0);
-  const revenue = event.ticketCategories.reduce((s, c) => s + c.soldCount * c.priceCzk, 0);
+  const sold = event.ticketCategories.reduce((s, c) => s + c.soldCount, 0);
+
+  const issuedTickets = ticketCounts.find((t) => t.status === "issued")?._count.id ?? 0;
+  const usedTickets = ticketCounts.find((t) => t.status === "used")?._count.id ?? 0;
+
+  const pendingOrders = event.orders.filter((o) =>
+    ["awaiting_payment", "payment_received_late", "manual_review"].includes(o.status)
+  ).length;
+
+  const confirmedRevenue = event.orders
+    .filter((o) => o.status === "paid" || o.status === "tickets_issued")
+    .reduce((s, o) => s + o.totalAmountCzk, 0);
 
   const orders = event.orders.map((o) => ({
     id: o.id,
@@ -62,12 +92,11 @@ export default async function EventDetail({
     ticketCount: o._count.tickets,
   }));
 
-  const publicUrl = `/objednavka/${event.slug}`;
+  const publicUrl = `/${event.organizer.slug}/${event.slug}`;
   const scanUrl = scanToken ? `/scan/${scanToken.token}` : null;
-  const embedCode = `<script src="https://tyckety.cz/widget.js" data-event="${event.slug}"></script>`;
+  const iframeCode = `<iframe src="https://tyckety.cz/embed/${event.id}" width="100%" height="520" frameborder="0" style="border-radius:12px;"></iframe>`;
 
   const statusColor = STATUS_COLOR[event.status] ?? STATUS_COLOR.draft;
-  const orderCount = event.orders.length;
 
   return (
     <>
@@ -78,8 +107,8 @@ export default async function EventDetail({
           <Link href="/app/akce" className="text-gray-500 hover:text-white text-sm transition-colors">
             ← Moje akce
           </Link>
-          <div className="flex items-start justify-between mt-3">
-            <div>
+          <div className="flex items-start justify-between mt-3 gap-4">
+            <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-bold">{event.title}</h1>
               <p className="text-gray-400 text-sm mt-1">
                 {new Date(event.startsAt).toLocaleDateString("cs-CZ", {
@@ -94,32 +123,44 @@ export default async function EventDetail({
                 {event.venueAddress ? `, ${event.venueAddress}` : ""}
               </p>
             </div>
-            <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 ml-4 mt-1 ${statusColor}`}>
-              {STATUS_LABEL[event.status] ?? event.status}
-            </span>
+            <div className="flex items-center gap-2 shrink-0 mt-1">
+              <span className={`text-xs px-2.5 py-1 rounded-full ${statusColor}`}>
+                {STATUS_LABEL[event.status] ?? event.status}
+              </span>
+              <StatusButton eventId={event.id} currentStatus={event.status} />
+            </div>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
-          {/* Stats */}
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           {[
-            { label: "Prodáno", value: `${sold}/${capacity}` },
-            { label: "Objednávky", value: orderCount },
-            { label: "Příjmy (Kč)", value: revenue.toLocaleString("cs-CZ") },
+            { label: "Prodáno / kapacita", value: `${sold} / ${capacity}` },
+            { label: "Příjmy potvrzené", value: `${confirmedRevenue.toLocaleString("cs-CZ")} Kč` },
+            { label: "Čeká na platbu", value: pendingOrders },
+            { label: "Vydané vstupenky", value: issuedTickets },
+            { label: "Použito u vstupu", value: usedTickets },
+            { label: "Zbývá míst", value: Math.max(0, capacity - sold) },
           ].map((s) => (
             <div key={s.label} className="bg-gray-800 border border-gray-700 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold">{s.value}</div>
-              <div className="text-gray-400 text-sm mt-1">{s.label}</div>
+              <div className="text-gray-400 text-xs mt-1">{s.label}</div>
             </div>
           ))}
         </div>
 
+        {/* Links + info */}
         <div className="grid md:grid-cols-2 gap-4 mb-6">
           {/* Veřejný odkaz */}
           <InfoCard title="Odkaz pro zákazníky">
             <p className="text-xs text-gray-500 mb-2">Sdílejte tento odkaz pro prodej vstupenek.</p>
+            {event.status !== "published" && (
+              <p className="text-amber-400 text-xs mb-2">Akce není zveřejněna — odkaz zatím nefunguje.</p>
+            )}
             <a
               href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="block text-amber-400 hover:text-amber-300 text-sm break-all transition-colors"
             >
               tyckety.cz{publicUrl}
@@ -128,10 +169,12 @@ export default async function EventDetail({
 
           {/* Scan odkaz */}
           <InfoCard title="Vstupní kontrola (QR skener)">
-            <p className="text-xs text-gray-500 mb-2">Otevřete na telefonu pro skenování lístků.</p>
+            <p className="text-xs text-gray-500 mb-2">Otevřete na telefonu pro skenování lístků u vstupu.</p>
             {scanUrl ? (
               <a
                 href={scanUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block text-amber-400 hover:text-amber-300 text-sm break-all transition-colors"
               >
                 tyckety.cz{scanUrl}
@@ -142,10 +185,10 @@ export default async function EventDetail({
           </InfoCard>
 
           {/* Embed kód */}
-          <InfoCard title="Widget na váš web">
-            <p className="text-xs text-gray-500 mb-2">Vložte kód na svůj web pro prodej přímo ze stránek.</p>
-            <code className="block text-xs text-green-400 bg-gray-900 rounded px-3 py-2 break-all">
-              {embedCode}
+          <InfoCard title="Embed pro váš web">
+            <p className="text-xs text-gray-500 mb-2">Vložte iframe na svůj web pro prodej přímo ze stránek.</p>
+            <code className="block text-xs text-green-400 bg-gray-900 rounded px-3 py-2 break-all select-all">
+              {iframeCode}
             </code>
           </InfoCard>
 
@@ -156,7 +199,7 @@ export default async function EventDetail({
                 <div>
                   <p className="text-sm font-medium">{category.name}</p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {category.priceCzk} Kč · kapacita {category.capacity}
+                    {category.priceCzk.toLocaleString("cs-CZ")} Kč · kapacita {category.capacity}
                   </p>
                 </div>
                 <span className="text-xs text-gray-400">{category.soldCount} prodáno</span>
@@ -169,7 +212,12 @@ export default async function EventDetail({
 
         {/* Objednávky */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <h2 className="font-semibold mb-4">Objednávky</h2>
+          <h2 className="font-semibold mb-4">
+            Objednávky
+            {orders.length > 0 && (
+              <span className="text-gray-500 text-sm font-normal ml-2">({orders.length})</span>
+            )}
+          </h2>
           <OrdersTable orders={orders} />
         </div>
       </main>
