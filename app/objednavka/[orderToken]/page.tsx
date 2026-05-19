@@ -313,8 +313,13 @@ export default async function OrderPage({
                     <span className="ticket-value">{ticket.category.priceCzk.toLocaleString("cs-CZ")} Kč</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="ticket-label text-gray-500">Token</span>
-                    <span className="ticket-value font-mono text-xs text-gray-400">{ticket.token.slice(0, 8).toUpperCase()}</span>
+                    <span className="ticket-label text-gray-500">Odkaz na vstupenku</span>
+                    <Link
+                      href={`/vstupenka/${ticket.token}`}
+                      className="ticket-value font-mono text-xs text-amber-400 hover:text-amber-300 transition-colors"
+                    >
+                      {ticket.token.slice(0, 8).toUpperCase()} ↗
+                    </Link>
                   </div>
                 </div>
               </div>
