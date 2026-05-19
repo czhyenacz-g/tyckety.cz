@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { getReservedCount } from "@/lib/orders";
 import PurchaseForm from "@/app/[organizerSlug]/[eventSlug]/PurchaseForm";
 
 export default async function EmbedPage({
@@ -17,7 +18,8 @@ export default async function EmbedPage({
   if (!event) notFound();
 
   const category = event.ticketCategories[0];
-  const available = category ? category.capacity - category.soldCount : 0;
+  const reserved = category ? await getReservedCount(event.id) : 0;
+  const available = category ? Math.max(0, category.capacity - category.soldCount - reserved) : 0;
 
   return (
     <main className="p-3">

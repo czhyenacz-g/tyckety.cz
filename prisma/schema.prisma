@@ -110,6 +110,7 @@ model Order {
   buyerName                String
   buyerEmail               String
   status                   OrderStatus @default(awaiting_payment)
+  quantity                 Int         @default(1)
   totalAmountCzk           Int
   variableSymbol           String      @unique
   publicToken              String      @unique @default(uuid())

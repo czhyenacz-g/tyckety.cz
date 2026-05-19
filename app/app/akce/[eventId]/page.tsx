@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { expireStaleOrders, getReservedCount } from "@/lib/orders";
 import AppHeader from "@/app/components/AppHeader";
 import OrdersTable from "./OrdersTable";
 import StatusButton from "./StatusButton";
@@ -31,7 +32,10 @@ export default async function EventDetail({
   const { eventId } = await params;
   const { organizer } = session;
 
-  const [event, ticketCounts] = await Promise.all([
+  // Lazy expiration před načtením statistik
+  await expireStaleOrders(eventId);
+
+  const [event, ticketCounts, reserved] = await Promise.all([
     db.event.findFirst({
       where: { id: eventId, organizerId: organizer.id },
       include: {
@@ -44,6 +48,7 @@ export default async function EventDetail({
             buyerName: true,
             buyerEmail: true,
             status: true,
+            quantity: true,
             totalAmountCzk: true,
             variableSymbol: true,
             publicToken: true,
@@ -59,6 +64,7 @@ export default async function EventDetail({
       where: { eventId },
       _count: { id: true },
     }),
+    getReservedCount(eventId),
   ]);
 
   if (!event) notFound();
@@ -69,12 +75,9 @@ export default async function EventDetail({
   const capacity = event.ticketCategories.reduce((s, c) => s + c.capacity, 0);
   const sold = event.ticketCategories.reduce((s, c) => s + c.soldCount, 0);
 
-  const issuedTickets = ticketCounts.find((t) => t.status === "issued")?._count.id ?? 0;
   const usedTickets = ticketCounts.find((t) => t.status === "used")?._count.id ?? 0;
 
-  const pendingOrders = event.orders.filter((o) =>
-    ["awaiting_payment", "payment_received_late", "manual_review"].includes(o.status)
-  ).length;
+  const pendingOrders = event.orders.filter((o) => o.status === "awaiting_payment").length;
 
   const confirmedRevenue = event.orders
     .filter((o) => o.status === "paid" || o.status === "tickets_issued")
@@ -85,6 +88,7 @@ export default async function EventDetail({
     buyerName: o.buyerName,
     buyerEmail: o.buyerEmail,
     status: o.status,
+    quantity: o.quantity,
     totalAmountCzk: o.totalAmountCzk,
     variableSymbol: o.variableSymbol,
     publicToken: o.publicToken,
@@ -135,12 +139,12 @@ export default async function EventDetail({
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           {[
-            { label: "Prodáno / kapacita", value: `${sold} / ${capacity}` },
+            { label: "Vydáno vstupenek / kapacita", value: `${sold} / ${capacity}` },
             { label: "Příjmy potvrzené", value: `${confirmedRevenue.toLocaleString("cs-CZ")} Kč` },
             { label: "Čeká na platbu", value: pendingOrders },
-            { label: "Vydané vstupenky", value: issuedTickets },
+            { label: "Rezervováno (pending)", value: reserved },
             { label: "Použito u vstupu", value: usedTickets },
-            { label: "Zbývá míst", value: Math.max(0, capacity - sold) },
+            { label: "Zbývá míst", value: Math.max(0, capacity - sold - reserved) },
           ].map((s) => (
             <div key={s.label} className="bg-gray-800 border border-gray-700 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold">{s.value}</div>

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { expireStaleOrders } from "@/lib/orders";
 
 function generateVariableSymbol(): string {
-  // 10-místný variabilní symbol: 7 číslic z timestampu + 3 náhodné
   const ts = (Date.now() % 10_000_000).toString().padStart(7, "0");
   const rand = Math.floor(Math.random() * 1000).toString().padStart(3, "0");
   return `${ts}${rand}`;
@@ -17,8 +17,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Neplatné údaje objednávky." }, { status: 400 });
   }
 
+  // Lazy expiration: uvolni kapacitu po propadlých pending objednávkách
+  await expireStaleOrders(eventId);
+
   try {
-    // Serializable isolation zajišťuje konzistentní kontrolu kapacity při souběžných požadavcích
     const order = await db.$transaction(
       async (tx) => {
         const category = await tx.ticketCategory.findUnique({
@@ -30,39 +32,38 @@ export async function POST(req: NextRequest) {
           throw new Error("invalid_category");
         }
 
-        const available = category.capacity - category.soldCount;
+        // Rezervace aktivních pending objednávek (deadline ještě neuplynul)
+        const reservedResult = await tx.order.aggregate({
+          where: {
+            eventId,
+            status: "awaiting_payment",
+            paymentDisplayDeadlineAt: { gt: new Date() },
+          },
+          _sum: { quantity: true },
+        });
+        const reserved = reservedResult._sum.quantity ?? 0;
+
+        // soldCount = potvrzené vstupenky; reserved = pending rezervace
+        const available = category.capacity - category.soldCount - reserved;
         if (available < qty) {
           throw new Error("no_capacity");
         }
 
         const vs = generateVariableSymbol();
 
+        // Tickety se nevytvářejí tady — až při "Vystavit vstupenky"
         const newOrder = await tx.order.create({
           data: {
             eventId,
             buyerName: buyerName.trim(),
             buyerEmail: buyerEmail.trim().toLowerCase(),
             status: "awaiting_payment",
+            quantity: qty,
             totalAmountCzk: category.priceCzk * qty,
             variableSymbol: vs,
-            paymentDisplayDeadlineAt: new Date(Date.now() + 15 * 60 * 1000),  // 15 min zobrazený deadline
-            paymentGraceDeadlineAt: new Date(Date.now() + 60 * 60 * 1000),    // 60 min interní lhůta
+            paymentDisplayDeadlineAt: new Date(Date.now() + 15 * 60 * 1000),
+            paymentGraceDeadlineAt: new Date(Date.now() + 60 * 60 * 1000),
           },
-        });
-
-        await tx.ticket.createMany({
-          data: Array.from({ length: qty }, () => ({
-            orderId: newOrder.id,
-            eventId,
-            categoryId,
-            status: "issued" as const,
-          })),
-        });
-
-        // Kapacita blokována hned po objednávce — soldCount zahrnuje i nezaplacené objednávky v lhůtě
-        await tx.ticketCategory.update({
-          where: { id: categoryId },
-          data: { soldCount: { increment: qty } },
         });
 
         return newOrder;

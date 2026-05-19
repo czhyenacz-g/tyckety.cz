@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Nav from "@/app/components/Nav";
 import { db } from "@/lib/db";
+import { getReservedCount } from "@/lib/orders";
 import PurchaseForm from "./PurchaseForm";
 
 type Props = { params: Promise<{ organizerSlug: string; eventSlug: string }> };
@@ -58,7 +59,8 @@ export default async function EventPage({
 
   // Pro MVP: první aktivní kategorie. Model podporuje více kategorií.
   const category = event.ticketCategories[0];
-  const available = category ? category.capacity - category.soldCount : 0;
+  const reserved = category ? await getReservedCount(event.id) : 0;
+  const available = category ? Math.max(0, category.capacity - category.soldCount - reserved) : 0;
 
   return (
     <>

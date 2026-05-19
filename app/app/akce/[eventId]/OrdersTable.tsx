@@ -17,6 +17,7 @@ interface Order {
   buyerName: string;
   buyerEmail: string;
   status: OrderStatus;
+  quantity: number;
   totalAmountCzk: number;
   variableSymbol: string;
   publicToken: string;
@@ -101,7 +102,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
               <td className="py-3 pr-4 text-amber-400 font-semibold">
                 {o.totalAmountCzk.toLocaleString("cs-CZ")} Kč
               </td>
-              <td className="py-3 pr-4 text-gray-400">{o.ticketCount} ks</td>
+              <td className="py-3 pr-4 text-gray-400">{o.ticketCount > 0 ? o.ticketCount : o.quantity} ks</td>
               <td className="py-3 pr-4">
                 <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLOR[o.status]}`}>
                   {STATUS_LABEL[o.status]}
