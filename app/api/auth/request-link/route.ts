@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { enqueueAndTrySend } from "@/lib/email/outbox";
+import { magicLinkTemplate } from "@/lib/email/templates";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -47,9 +49,9 @@ export async function POST(req: NextRequest) {
   if (next) linkUrl.searchParams.set("next", next);
   const link = linkUrl.toString();
 
-  // TODO: V produkci odeslat e-mail s odkazem (např. přes Resend.com nebo SendGrid).
-  //       Stačí: resend.emails.send({ to: email, subject: "Přihlašovací odkaz", html: `<a href="${link}">Přihlásit se</a>` })
-  console.log(`[magic-link] ${email} → ${link}`);
+  const { subject, html } = magicLinkTemplate(link);
+  await enqueueAndTrySend({ type: "magic_link", to: email, subject, html });
 
-  return NextResponse.json({ link });
+  const isDev = process.env.NODE_ENV !== "production";
+  return NextResponse.json(isDev ? { link } : { ok: true });
 }

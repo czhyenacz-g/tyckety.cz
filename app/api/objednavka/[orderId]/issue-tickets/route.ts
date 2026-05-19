@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { enqueueAndTrySend } from "@/lib/email/outbox";
+import { ticketsIssuedTemplate } from "@/lib/email/templates";
 
 export async function PATCH(
   _req: NextRequest,
@@ -64,6 +66,40 @@ export async function PATCH(
 
       return { qty };
     });
+
+    // Send email fire-and-forget — never crash ticket issuance
+    const orderData = await db.order.findUnique({
+      where: { id: orderId },
+      select: {
+        buyerName: true,
+        buyerEmail: true,
+        quantity: true,
+        publicToken: true,
+        event: { select: { id: true, title: true, startsAt: true, venueName: true } },
+      },
+    });
+    if (orderData) {
+      const appUrl = process.env.APP_URL ?? "https://tyckety.cz";
+      const { subject, html } = ticketsIssuedTemplate({
+        buyerName: orderData.buyerName,
+        eventTitle: orderData.event.title,
+        eventDate: new Date(orderData.event.startsAt).toLocaleDateString("cs-CZ", {
+          weekday: "long", day: "numeric", month: "long", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        }),
+        venueName: orderData.event.venueName,
+        quantity: orderData.quantity,
+        orderUrl: `${appUrl}/objednavka/${orderData.publicToken}`,
+      });
+      await enqueueAndTrySend({
+        type: "tickets_issued_customer",
+        to: orderData.buyerEmail,
+        subject,
+        html,
+        orderId,
+        eventId: orderData.event.id,
+      });
+    }
 
     return NextResponse.json({ ok: true, qty: result.qty });
   } catch (err) {

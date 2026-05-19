@@ -75,6 +75,7 @@ model Event {
   orders           Order[]
   tickets          Ticket[]
   scanTokens       ScanAccessToken[]
+  emailMessages    EmailMessage[]
 }
 
 // ─── TicketCategory ───────────────────────────────────────────────────────────
@@ -122,6 +123,7 @@ model Order {
   event          Event           @relation(fields: [eventId], references: [id])
   tickets        Ticket[]
   paymentRecords PaymentRecord[]
+  emailMessages  EmailMessage[]
 }
 
 // ─── Ticket ───────────────────────────────────────────────────────────────────
@@ -182,4 +184,37 @@ model ScanAccessToken {
   createdAt DateTime @default(now())
 
   event Event @relation(fields: [eventId], references: [id])
+}
+
+// ─── EmailMessage ─────────────────────────────────────────────────────────────
+
+enum EmailStatus {
+  queued
+  sending
+  sent
+  failed
+}
+
+enum EmailType {
+  magic_link
+  order_created_customer
+  order_created_organizer
+  tickets_issued_customer
+}
+
+model EmailMessage {
+  id        String      @id @default(uuid())
+  type      EmailType
+  status    EmailStatus @default(queued)
+  to        String
+  subject   String
+  html      String      @db.Text
+  orderId   String?
+  eventId   String?
+  error     String?
+  sentAt    DateTime?
+  createdAt DateTime    @default(now())
+
+  order Order? @relation(fields: [orderId], references: [id])
+  event Event? @relation(fields: [eventId], references: [id])
 }

@@ -54,6 +54,11 @@ export default async function InternalEventDetailPage({
         orderBy: { createdAt: "desc" },
         include: {
           tickets: { select: { id: true, status: true } },
+          emailMessages: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { status: true, type: true, sentAt: true },
+          },
         },
       },
       scanTokens: { select: { id: true, token: true, active: true, createdAt: true } },
@@ -244,6 +249,7 @@ export default async function InternalEventDetailPage({
                     <th className="py-2 pr-4">Status</th>
                     <th className="py-2 pr-4 text-right">Lístky</th>
                     <th className="py-2 pr-4 text-right">Použito</th>
+                    <th className="py-2 pr-4">E-mail</th>
                     <th className="py-2">Odkaz</th>
                   </tr>
                 </thead>
@@ -293,6 +299,14 @@ export default async function InternalEventDetailPage({
                           ) : (
                             <span className="text-gray-600">—</span>
                           )}
+                        </td>
+                        <td className="py-2.5 pr-4">
+                          {(() => {
+                            const em = order.emailMessages[0];
+                            if (!em) return <span className="text-gray-600 text-xs">—</span>;
+                            const color = em.status === "sent" ? "text-green-400" : em.status === "failed" ? "text-red-400" : "text-amber-400";
+                            return <span className={`text-xs ${color}`}>{em.status}</span>;
+                          })()}
                         </td>
                         <td className="py-2.5">
                           <a

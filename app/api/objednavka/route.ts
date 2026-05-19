@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { expireStaleOrders } from "@/lib/orders";
+import { enqueueAndTrySend } from "@/lib/email/outbox";
+import { orderCreatedCustomerTemplate, orderCreatedOrganizerTemplate } from "@/lib/email/templates";
 
 function generateVariableSymbol(): string {
   const ts = (Date.now() % 10_000_000).toString().padStart(7, "0");
@@ -74,6 +76,57 @@ export async function POST(req: NextRequest) {
         },
         { isolationLevel: "Serializable" },
       );
+
+      // Send emails fire-and-forget — never crash the order flow
+      const eventData = await db.event.findUnique({
+        where: { id: eventId },
+        select: {
+          title: true,
+          startsAt: true,
+          venueName: true,
+          organizer: { select: { notificationEmail: true, bankAccount: true } },
+        },
+      });
+
+      if (eventData) {
+        const appUrl = process.env.APP_URL ?? "https://tyckety.cz";
+        const orderUrl = `${appUrl}/objednavka/${order.publicToken}`;
+        const eventDate = new Date(eventData.startsAt).toLocaleDateString("cs-CZ", {
+          weekday: "long", day: "numeric", month: "long", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        });
+        const paymentDeadline = new Date(order.paymentDisplayDeadlineAt).toLocaleString("cs-CZ", {
+          day: "numeric", month: "numeric", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        });
+
+        const customerEmail = orderCreatedCustomerTemplate({
+          buyerName: order.buyerName,
+          eventTitle: eventData.title,
+          eventDate,
+          venueName: eventData.venueName,
+          quantity: order.quantity,
+          totalAmountCzk: order.totalAmountCzk,
+          variableSymbol: order.variableSymbol,
+          bankAccount: eventData.organizer.bankAccount,
+          orderUrl,
+          paymentDeadline,
+        });
+        const organizerEmail = orderCreatedOrganizerTemplate({
+          buyerName: order.buyerName,
+          buyerEmail: order.buyerEmail,
+          eventTitle: eventData.title,
+          quantity: order.quantity,
+          totalAmountCzk: order.totalAmountCzk,
+          variableSymbol: order.variableSymbol,
+          orderUrl,
+        });
+
+        await Promise.all([
+          enqueueAndTrySend({ type: "order_created_customer", to: order.buyerEmail, ...customerEmail, orderId: order.id, eventId }),
+          enqueueAndTrySend({ type: "order_created_organizer", to: eventData.organizer.notificationEmail, ...organizerEmail, orderId: order.id, eventId }),
+        ]);
+      }
 
       return NextResponse.json({ orderToken: order.publicToken }, { status: 201 });
     } catch (err) {
