@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { db } from "@/lib/db";
 import Nav from "@/app/components/Nav";
 
@@ -67,9 +68,20 @@ export default async function OrganizerPage({ params }: Props) {
               return (
                 <div
                   key={event.id}
-                  className="bg-gray-800 border border-gray-700 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-0"
                 >
-                  <div className="flex-1">
+                  {event.posterUrl && (
+                    <div className="shrink-0 sm:w-24 sm:h-24 w-full h-32 relative">
+                      <Image
+                        src={event.posterUrl}
+                        alt={`Plakát — ${event.title}`}
+                        fill
+                        className="object-cover"
+                        sizes="96px"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 p-5">
                     <h2 className="font-semibold text-lg">{event.title}</h2>
                     <p className="text-gray-400 text-sm mt-1">
                       {new Date(event.startsAt).toLocaleDateString("cs-CZ", {
@@ -91,7 +103,7 @@ export default async function OrganizerPage({ params }: Props) {
                       od {minPrice} Kč
                     </p>
                   </div>
-                  <div className="shrink-0 text-right">
+                  <div className="shrink-0 text-right p-5 pl-0">
                     {available <= 0 ? (
                       <span className="block text-gray-500 text-sm mb-2">Vyprodáno</span>
                     ) : (

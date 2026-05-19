@@ -15,30 +15,33 @@ async function main() {
     },
   });
 
+  // 2026-10-24 19:00 Europe/Prague = 17:00 UTC (CEST, UTC+2)
   const event = await db.event.upsert({
-    where: { slug: "demo-akce-2025" },
+    where: { slug: "test-heavy-metal-koncert" },
     update: {},
     create: {
       organizerId: organizer.id,
-      title: "Demo Akce 2025",
-      slug: "demo-akce-2025",
-      description: "Ukázková akce pro testování Tyckety.cz.",
-      startsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      venueName: "Divadlo Na Příkopě",
-      venueAddress: "Na Příkopě 1, 110 00 Praha 1",
+      title: "TEST — Heavy metal koncert",
+      slug: "test-heavy-metal-koncert",
+      description:
+        "Nezaměnitelná atmosféra, basy co otřásají zdmi a pět kapel nabitých riffama. Tohle není koncert pro slabé povahy — přijďte si vyčistit hlavu a nechat se rozdrtit hudbou.",
+      startsAt: new Date("2026-10-24T17:00:00.000Z"),
+      venueName: "Klub Inferno",
+      venueAddress: "Praha",
+      posterUrl: "/images/test_koncert_web.webp",
       status: "published",
     },
   });
 
   await db.ticketCategory.upsert({
-    where: { id: "00000000-0000-0000-0000-000000000001" },
+    where: { id: "00000000-0000-0000-0000-000000000002" },
     update: {},
     create: {
-      id: "00000000-0000-0000-0000-000000000001",
+      id: "00000000-0000-0000-0000-000000000002",
       eventId: event.id,
-      name: "Standardní vstupné",
-      priceCzk: 350,
-      capacity: 200,
+      name: "Základní vstupenka",
+      priceCzk: 390,
+      capacity: 120,
     },
   });
 

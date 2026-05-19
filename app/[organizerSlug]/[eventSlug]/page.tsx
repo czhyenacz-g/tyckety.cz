@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Nav from "@/app/components/Nav";
 import { db } from "@/lib/db";
 import { getReservedCount } from "@/lib/orders";
@@ -11,7 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { organizerSlug, eventSlug } = await params;
   const event = await db.event.findFirst({
     where: { slug: eventSlug, status: "published", organizer: { slug: organizerSlug } },
-    select: { title: true, description: true, startsAt: true, venueName: true },
+    select: { title: true, description: true, startsAt: true, venueName: true, posterUrl: true },
   });
   if (!event) return {};
 
@@ -24,6 +25,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? event.description.slice(0, 155)
     : `${dateStr}${event.venueName ? ` · ${event.venueName}` : ""} — kupte vstupenky online.`;
 
+  const ogImages = event.posterUrl
+    ? [{ url: `https://tyckety.cz${event.posterUrl}` }]
+    : undefined;
+
   return {
     title: `${event.title} | Tyckety.cz`,
     description: desc,
@@ -33,8 +38,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "website",
       locale: "cs_CZ",
       siteName: "Tyckety.cz",
+      images: ogImages,
     },
-    twitter: { card: "summary", title: event.title, description: desc },
+    twitter: {
+      card: event.posterUrl ? "summary_large_image" : "summary",
+      title: event.title,
+      description: desc,
+      images: ogImages ? ogImages.map((i) => i.url) : undefined,
+    },
   };
 }
 
@@ -78,6 +89,18 @@ export default async function EventPage({
         <div className="grid md:grid-cols-5 gap-8">
           {/* Left: event info */}
           <div className="md:col-span-3 space-y-6">
+            {event.posterUrl && (
+              <div className="rounded-xl overflow-hidden">
+                <Image
+                  src={event.posterUrl}
+                  alt={`Plakát — ${event.title}`}
+                  width={600}
+                  height={850}
+                  className="w-full h-auto object-cover"
+                  priority
+                />
+              </div>
+            )}
             <div>
               <h1 className="text-3xl font-bold mb-3">{event.title}</h1>
               <div className="space-y-1.5 text-sm text-gray-400">

@@ -40,6 +40,7 @@ export default async function TicketPage({
           startsAt: true,
           venueName: true,
           venueAddress: true,
+          posterUrl: true,
           organizer: { select: { name: true } },
         },
       },
@@ -72,6 +73,19 @@ export default async function TicketPage({
             </p>
           )}
         </div>
+
+        {/* Plakát akce */}
+        {ticket.event.posterUrl && (
+          <div className="rounded-xl overflow-hidden mb-4">
+            <Image
+              src={ticket.event.posterUrl}
+              alt={`Plakát — ${ticket.event.title}`}
+              width={400}
+              height={565}
+              className="w-full h-auto object-cover"
+            />
+          </div>
+        )}
 
         {/* QR kód */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-4 flex flex-col items-center">
