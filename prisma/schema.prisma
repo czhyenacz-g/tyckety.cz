@@ -18,8 +18,33 @@ model Organizer {
   notificationEmail String
   createdAt         DateTime @default(now())
 
-  events         Event[]
-  paymentRecords PaymentRecord[]
+  events          Event[]
+  paymentRecords  PaymentRecord[]
+  magicLinkTokens MagicLinkToken[]
+  sessions        Session[]
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+model MagicLinkToken {
+  id          String    @id @default(uuid())
+  organizerId String
+  token       String    @unique @default(uuid())
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  organizer Organizer @relation(fields: [organizerId], references: [id])
+}
+
+model Session {
+  id          String   @id @default(uuid())
+  organizerId String
+  token       String   @unique @default(uuid())
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  organizer Organizer @relation(fields: [organizerId], references: [id])
 }
 
 // ─── Event ────────────────────────────────────────────────────────────────────

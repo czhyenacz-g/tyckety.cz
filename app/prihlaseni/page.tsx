@@ -1,17 +1,33 @@
-import Link from "next/link";
-import Nav from "../components/Nav";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
+import Nav from "@/app/components/Nav";
+import PrihlaseniForm from "./PrihlaseniForm";
 
-export default function Prihlaseni() {
+export default async function Prihlaseni({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const session = await getSession();
+  if (session) redirect("/app");
+
+  const { error } = await searchParams;
+
   return (
     <>
       <Nav />
       <main className="min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-sm text-center">
-          <h1 className="text-2xl font-bold mb-2">Přihlášení</h1>
-          <p className="text-gray-400 text-sm mb-8">Brzy k dispozici.</p>
-          <Link href="/" className="text-amber-400 hover:text-amber-300 text-sm transition-colors">
-            ← Zpět na úvod
-          </Link>
+        <div className="w-full max-w-sm">
+          <h1 className="text-2xl font-bold mb-2 text-center">Přihlášení</h1>
+          <p className="text-gray-400 text-sm mb-8 text-center">
+            Zadejte e-mail a zašleme vám přihlašovací odkaz.
+          </p>
+          {error === "expired" && (
+            <p className="text-red-400 text-sm mb-4 text-center bg-red-900/20 border border-red-800 rounded-lg px-4 py-2">
+              Odkaz vypršel nebo byl již použit.
+            </p>
+          )}
+          <PrihlaseniForm />
         </div>
       </main>
     </>
