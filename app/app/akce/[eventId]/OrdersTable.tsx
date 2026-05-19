@@ -56,10 +56,19 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
 
-  async function markPaid(orderId: string) {
+  async function markPaid(orderId: string, requireConfirm: boolean) {
+    if (requireConfirm) {
+      const ok = window.confirm("Objednávka je po lhůtě. Opravdu chcete ručně potvrdit platbu?");
+      if (!ok) return;
+    }
     setLoading(orderId + "-paid");
-    await fetch(`/api/objednavka/${orderId}/paid`, { method: "PATCH" });
+    const res = await fetch(`/api/objednavka/${orderId}/paid`, { method: "PATCH" });
     setLoading(null);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error ?? "Chyba při potvrzení platby.");
+      return;
+    }
     router.refresh();
   }
 
@@ -139,10 +148,15 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
               <td className="py-3">
                 <div className="flex gap-2">
                   {(o.status === "awaiting_payment" ||
+                    o.status === "payment_window_expired" ||
+                    o.status === "expired" ||
                     o.status === "payment_received_late" ||
                     o.status === "manual_review") && (
                     <button
-                      onClick={() => markPaid(o.id)}
+                      onClick={() => markPaid(
+                        o.id,
+                        o.status === "payment_window_expired" || o.status === "expired"
+                      )}
                       disabled={loading === o.id + "-paid"}
                       className="text-xs px-3 py-1.5 bg-green-800 hover:bg-green-700 disabled:opacity-50 text-green-300 rounded-lg transition-colors"
                     >
