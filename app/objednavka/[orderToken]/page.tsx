@@ -84,11 +84,11 @@ export default async function OrderPage({
   const isPanic = isExpired || isLate;
 
   // QR vstupenky: pouze když jsou skutečně vystaveny
+  const appUrl = process.env.APP_URL ?? "https://tyckety.cz";
   const ticketQrUrls: Record<string, string> = {};
   if (isIssued) {
     for (const ticket of order.tickets) {
-      const url = `https://tyckety.cz/vstupenka/${ticket.token}`;
-      ticketQrUrls[ticket.id] = await generateQrDataUrl(url);
+      ticketQrUrls[ticket.id] = await generateQrDataUrl(`${appUrl}/vstupenka/${ticket.token}`);
     }
   }
 

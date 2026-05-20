@@ -99,3 +99,6 @@ Technická a provozní dokumentace v `docs/`:
 | [`docs/OPERATIONS.md`](docs/OPERATIONS.md) | Env proměnné, seed, deploy, provozní postupy |
 | [`docs/PAYMENTS.md`](docs/PAYMENTS.md) | Platební flow, Raiffeisenbank CSV formát a matching logika |
 | [`docs/TESTING.md`](docs/TESTING.md) | Testovací checklisty |
+| [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md) | Audit kódu — co je solidní, rizika, doporučení |
+| [`docs/PROJECT_OVERVIEW_FOR_BUYER.md`](docs/PROJECT_OVERVIEW_FOR_BUYER.md) | Přehled projektu pro kupce / technického poradce |
+| [`docs/HANDOVER_AND_DEPLOYMENT.md`](docs/HANDOVER_AND_DEPLOYMENT.md) | Předání projektu, env proměnné, DB setup, smoke test |

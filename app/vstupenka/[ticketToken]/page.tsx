@@ -52,7 +52,7 @@ export default async function TicketPage({
   if (!ticket) notFound();
 
   const statusInfo = TICKET_STATUS[ticket.status as keyof typeof TICKET_STATUS] ?? TICKET_STATUS.cancelled;
-  const qrUrl = `https://tyckety.cz/vstupenka/${ticket.token}`;
+  const qrUrl = `${process.env.APP_URL ?? "https://tyckety.cz"}/vstupenka/${ticket.token}`;
   const qrDataUrl = await generateQrDataUrl(qrUrl);
 
   return (
