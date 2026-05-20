@@ -5,7 +5,6 @@ import Nav from "@/app/components/Nav";
 export const metadata: Metadata = {
   title: "Podmínky použití | Tyckety.cz",
   description: "Tyckety je nástroj pro správu vstupenek. Pořadatel odpovídá za akci a komunikaci se zákazníky.",
-  robots: { index: false },
 };
 
 export default function PodminkyPage() {
