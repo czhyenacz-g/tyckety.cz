@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { siteUrl } from "@/lib/config";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import { GOATCOUNTER_CODE } from "./config/analytics";
@@ -11,17 +12,17 @@ export const metadata: Metadata = {
   openGraph: {
     title: "TEST — Heavy metal koncert | Tyckety.cz",
     description: "Ukázková koncertní stránka vytvořená v Tyckety. Vstupenky přes QR platbu a ověření mobilem.",
-    url: "https://tyckety.cz",
+    url: siteUrl,
     siteName: "Tyckety.cz",
     locale: "cs_CZ",
     type: "website",
-    images: [{ url: "https://tyckety.cz/images/test_koncert_web.webp" }],
+    images: [{ url: `${siteUrl}/images/test_koncert_web.webp` }],
   },
   twitter: {
     card: "summary_large_image",
     title: "TEST — Heavy metal koncert | Tyckety.cz",
     description: "Ukázková koncertní stránka vytvořená v Tyckety. Vstupenky přes QR platbu a ověření mobilem.",
-    images: ["https://tyckety.cz/images/test_koncert_web.webp"],
+    images: [`${siteUrl}/images/test_koncert_web.webp`],
   },
 };
 

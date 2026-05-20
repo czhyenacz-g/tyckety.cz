@@ -5,6 +5,7 @@ import Nav from "@/app/components/Nav";
 import LocationNavigationPopup from "@/app/components/LocationNavigationPopup";
 import { db } from "@/lib/db";
 import { getReservedCount } from "@/lib/orders";
+import { siteUrl } from "@/lib/config";
 import PurchaseForm from "./PurchaseForm";
 
 type Props = { params: Promise<{ organizerSlug: string; eventSlug: string }> };
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : `${dateStr}${event.venueName ? ` · ${event.venueName}` : ""} — kupte vstupenky online.`;
 
   const ogImages = event.posterUrl
-    ? [{ url: `https://tyckety.cz${event.posterUrl}` }]
+    ? [{ url: `${siteUrl}${event.posterUrl}` }]
     : undefined;
 
   return {

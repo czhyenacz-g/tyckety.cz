@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { expireStaleOrders, getReservedCount } from "@/lib/orders";
+import { siteUrl } from "@/lib/config";
 import AppHeader from "@/app/components/AppHeader";
 import CsvImportForm from "./CsvImportForm";
 import MarkPaidCodesForm from "./MarkPaidCodesForm";
@@ -124,7 +125,7 @@ export default async function EventDetail({
 
   const publicUrl = `/${event.organizer.slug}/${event.slug}`;
   const scanUrl = scanToken ? `/scan/${scanToken.token}` : null;
-  const iframeCode = `<iframe src="https://tyckety.cz/embed/${event.id}" width="100%" height="520" frameborder="0" style="border-radius:12px;"></iframe>`;
+  const iframeCode = `<iframe src="${siteUrl}/embed/${event.id}" width="100%" height="520" frameborder="0" style="border-radius:12px;"></iframe>`;
 
   const statusColor = STATUS_COLOR[event.status] ?? STATUS_COLOR.draft;
 

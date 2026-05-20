@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
+import { siteUrl } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +14,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const organizerSlugs = [...new Set(events.map((e) => e.organizer.slug))];
 
   const organizerUrls: MetadataRoute.Sitemap = organizerSlugs.map((slug) => ({
-    url: `https://tyckety.cz/${slug}`,
+    url: `${siteUrl}/${slug}`,
     changeFrequency: "weekly",
     priority: 0.7,
   }));
 
   const eventUrls: MetadataRoute.Sitemap = events.map((e) => ({
-    url: `https://tyckety.cz/${e.organizer.slug}/${e.slug}`,
+    url: `${siteUrl}/${e.organizer.slug}/${e.slug}`,
     lastModified: e.createdAt,
     changeFrequency: "daily",
     priority: 0.9,
@@ -27,7 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     {
-      url: "https://tyckety.cz",
+      url: siteUrl,
       changeFrequency: "weekly",
       priority: 1.0,
     },
