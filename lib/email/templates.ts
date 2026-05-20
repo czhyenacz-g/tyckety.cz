@@ -116,3 +116,46 @@ export function ticketsIssuedTemplate(d: {
     `),
   };
 }
+
+export function pendingReviewAdminTemplate(d: {
+  eventTitle: string;
+  eventId: string;
+  eventSlug: string;
+  startsAt: string;
+  venueName?: string | null;
+  venueAddress?: string | null;
+  organizerName: string;
+  organizerEmail: string;
+  organizerIco?: string | null;
+  bankAccount: string;
+  categoryCount: number;
+  totalCapacity: number;
+  adminUrl: string;
+  submittedAt: string;
+}): { subject: string; html: string } {
+  const row = (label: string, value: string, last = false) =>
+    `<tr><td style="color:#9ca3af;padding:6px 0;${last ? "" : "border-bottom:1px solid #374151;"}">${label}</td>` +
+    `<td style="color:#fff;text-align:right;padding:6px 0;${last ? "" : "border-bottom:1px solid #374151;"}">${value}</td></tr>`;
+
+  return {
+    subject: `Nová akce čeká na schválení: ${d.eventTitle}`,
+    html: base(`
+      <h2 style="margin:0 0 16px;color:#fff;font-size:20px;">Nová akce ke schválení</h2>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+        ${row("Název akce", d.eventTitle)}
+        ${row("Slug", `<span style="font-size:12px;color:#6b7280;">${d.eventSlug}</span>`)}
+        ${row("Datum a čas", d.startsAt)}
+        ${d.venueName ? row("Místo", `${d.venueName}${d.venueAddress ? ", " + d.venueAddress : ""}`) : ""}
+        ${row("Pořadatel", d.organizerName)}
+        ${row("E-mail pořadatele", d.organizerEmail)}
+        ${d.organizerIco ? row("IČO", d.organizerIco) : ""}
+        ${row("Bankovní účet", d.bankAccount)}
+        ${row("Typy vstupenek", String(d.categoryCount))}
+        ${row("Celková kapacita", String(d.totalCapacity))}
+        ${row("Odesláno ke schválení", d.submittedAt, true)}
+      </table>
+      <a href="${d.adminUrl}" style="display:inline-block;background:#f59e0b;color:#111827;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:15px;">Zkontrolovat akci →</a>
+      <p style="margin:20px 0 0;color:#6b7280;font-size:12px;">ID akce: ${d.eventId}</p>
+    `),
+  };
+}
