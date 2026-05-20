@@ -81,6 +81,7 @@ export default async function OrderPage({
   const isIssued = effectiveStatus === "tickets_issued";       // vstupenky existují
   const isLate = effectiveStatus === "payment_received_late" || effectiveStatus === "manual_review";
   const isExpired = effectiveStatus === "payment_window_expired" || effectiveStatus === "expired";
+  const isPanic = isExpired || isLate;
 
   // QR vstupenky: pouze když jsou skutečně vystaveny
   const ticketQrUrls: Record<string, string> = {};
@@ -374,6 +375,15 @@ export default async function OrderPage({
             <p className="font-semibold text-green-400 mb-2">Platba potvrzena</p>
             <p className="text-gray-300 text-sm leading-relaxed">
               Pořadatel nyní vystaví vstupenky. Vstupenky obvykle dorazí do 1 hodiny — jakmile budou připravené, zobrazí se tady a dorazí vám e-mailem.
+            </p>
+          </div>
+        )}
+
+        {isPanic && (
+          <div className="bg-amber-950/40 border border-amber-700/50 rounded-xl p-5 mb-4 text-center">
+            <p className="text-3xl font-black tracking-widest text-amber-400 mb-3">DO NOT PANIC!</p>
+            <p className="text-gray-300 text-sm leading-relaxed">
+              Pokud jste platbu odeslali, je možné, že ji pořadatel ještě nestihl potvrdit. U malých akcí se platby často kontrolují ručně. Jakmile bude platba potvrzena, vstupenky se zobrazí tady a dorazí vám e-mailem.
             </p>
           </div>
         )}
