@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { classifyOrder, type OrderGroup } from "@/lib/orders";
 
 type OrderStatus =
   | "awaiting_payment"
@@ -35,22 +36,6 @@ interface Order {
   payment: PaymentInfo | null;
 }
 
-type OrderGroup = "problematic" | "pending" | "paid" | "issued";
-
-const PROBLEM_PAYMENT_STATUSES = new Set([
-  "amount_mismatch",
-  "wrong_account",
-  "missing_symbol",
-  "unknown_symbol",
-]);
-
-function classifyOrder(order: Order): OrderGroup {
-  if (order.status === "tickets_issued") return "issued";
-  if (order.status === "paid") return "paid";
-  if (order.status === "manual_review") return "problematic";
-  if (order.payment && PROBLEM_PAYMENT_STATUSES.has(order.payment.status)) return "problematic";
-  return "pending";
-}
 
 function problemReason(order: Order): string {
   if (order.payment) {

@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-
-function safeNext(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/app";
-  return value;
-}
+import { safeNext } from "@/lib/safe-redirect";
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");

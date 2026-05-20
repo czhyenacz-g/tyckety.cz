@@ -1,0 +1,4 @@
+export function safeNext(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/app";
+  return value;
+}

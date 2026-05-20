@@ -1,5 +1,27 @@
 import { db } from "./db";
 
+export type OrderGroup = "problematic" | "pending" | "paid" | "issued";
+
+const PROBLEM_PAYMENT_STATUSES = new Set([
+  "amount_mismatch",
+  "wrong_account",
+  "missing_symbol",
+  "unknown_symbol",
+]);
+
+export interface ClassifiableOrder {
+  status: string;
+  payment?: { status: string } | null;
+}
+
+export function classifyOrder(order: ClassifiableOrder): OrderGroup {
+  if (order.status === "tickets_issued") return "issued";
+  if (order.status === "paid") return "paid";
+  if (order.status === "manual_review") return "problematic";
+  if (order.payment && PROBLEM_PAYMENT_STATUSES.has(order.payment.status)) return "problematic";
+  return "pending";
+}
+
 /**
  * Lazy expiration: označí awaiting_payment objednávky jako payment_window_expired
  * pokud vypršel jejich paymentDisplayDeadlineAt.
