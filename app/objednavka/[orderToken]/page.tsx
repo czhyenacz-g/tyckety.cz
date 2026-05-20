@@ -352,7 +352,10 @@ export default async function OrderPage({
             <div className="bg-gray-900/60 border border-gray-700 rounded-xl p-4 mt-4">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Co se stane po zaplacení</p>
               <p className="text-sm text-gray-300 leading-relaxed">
-                Po zaplacení vám vstupenky pošleme e-mailem. Zobrazí se také na této stránce, jakmile pořadatel platbu potvrdí. Odkaz na objednávku jsme vám poslali e-mailem — stránku si můžete pro jistotu uložit.
+                Po zaplacení prosím počkejte na potvrzení pořadatelem. Vstupenky obvykle dorazí e-mailem do 1 hodiny. U malých akcí platbu často potvrzuje pořadatel ručně.
+              </p>
+              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                Na tuto stránku se můžete kdykoliv vrátit z odkazu v e-mailu.
               </p>
               <p className="text-xs text-amber-400/80 mt-3 font-medium">Pokud jste už zaplatili, neplaťte znovu.</p>
             </div>
@@ -370,7 +373,7 @@ export default async function OrderPage({
           <div className="bg-green-900/20 border border-green-800 rounded-xl p-5 mb-4">
             <p className="font-semibold text-green-400 mb-2">Platba potvrzena</p>
             <p className="text-gray-300 text-sm leading-relaxed">
-              Pořadatel nyní vystaví vstupenky. Jakmile budou připravené, zobrazí se tady a dorazí vám e-mailem.
+              Pořadatel nyní vystaví vstupenky. Vstupenky obvykle dorazí do 1 hodiny — jakmile budou připravené, zobrazí se tady a dorazí vám e-mailem.
             </p>
           </div>
         )}

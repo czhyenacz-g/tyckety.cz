@@ -56,12 +56,13 @@ export function orderCreatedCustomerTemplate(d: {
         <tr><td style="color:#9ca3af;padding:6px 0;border-bottom:1px solid #374151;">Počet vstupenek</td><td style="color:#fff;text-align:right;padding:6px 0;border-bottom:1px solid #374151;">${d.quantity} ks</td></tr>
         <tr><td style="color:#9ca3af;padding:6px 0;border-bottom:1px solid #374151;">Celkem</td><td style="color:#f59e0b;font-weight:700;text-align:right;padding:6px 0;border-bottom:1px solid #374151;">${d.totalAmountCzk.toLocaleString("cs-CZ")} Kč</td></tr>
       </table>
-      <div style="background:#111827;border:1px solid #374151;border-radius:8px;padding:16px;margin-bottom:20px;">
+      <div style="background:#111827;border:1px solid #374151;border-radius:8px;padding:16px;margin-bottom:16px;">
         <p style="margin:0 0 8px;color:#9ca3af;font-size:13px;">Platební instrukce</p>
         <p style="margin:0 0 4px;color:#fff;">Číslo účtu: <strong>${d.bankAccount}</strong></p>
         <p style="margin:0 0 4px;color:#fff;">Variabilní symbol: <strong style="font-size:18px;color:#f59e0b;">${d.variableSymbol}</strong></p>
         <p style="margin:8px 0 0;color:#6b7280;font-size:13px;">Splatnost: ${d.paymentDeadline}</p>
       </div>
+      <p style="margin:0 0 20px;color:#9ca3af;font-size:13px;line-height:1.5;">Vstupenky obvykle dorazí do 1 hodiny po potvrzení platby pořadatelem. U malých akcí platbu potvrzuje pořadatel ručně.</p>
       <a href="${d.orderUrl}" style="display:inline-block;background:#374151;color:#fff;font-weight:600;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:14px;">Zobrazit objednávku →</a>
     `),
   };
