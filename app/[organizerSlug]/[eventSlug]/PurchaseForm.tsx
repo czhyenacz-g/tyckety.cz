@@ -119,6 +119,42 @@ export default function PurchaseForm({ eventId, category }: Props) {
         </div>
       </div>
 
+      <div>
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            name="termsAccepted"
+            required
+            className="mt-0.5 accent-amber-500 shrink-0"
+          />
+          <span className="text-xs text-gray-400 leading-relaxed">
+            Souhlasím s{" "}
+            <a
+              href="/legal/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-amber-400 hover:underline"
+            >
+              obchodními podmínkami
+            </a>
+            .
+          </span>
+        </label>
+      </div>
+
+      <p className="text-xs text-gray-500 leading-relaxed">
+        Osobní údaje zadané v objednávce zpracujeme za účelem vytvoření objednávky, doručení
+        vstupenek, ověření vstupu na akci a řešení případných problémů s objednávkou.{" "}
+        <a
+          href="/legal/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-400 hover:underline"
+        >
+          Podrobnosti v Zásadách ochrany osobních údajů.
+        </a>
+      </p>
+
       {error && (
         <p className="text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg px-4 py-2">
           {error}

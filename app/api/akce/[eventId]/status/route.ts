@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-const VALID = ["draft", "published", "cancelled", "ended"] as const;
+// Pořadatel může jen odeslat ke schválení nebo stáhnout zpět. Publikovat/blokovat smí jen internal admin.
+const VALID = ["draft", "pending_review", "cancelled", "ended"] as const;
 
 export async function PATCH(
   req: NextRequest,

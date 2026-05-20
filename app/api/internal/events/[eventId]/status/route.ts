@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/super-admin";
 import { db } from "@/lib/db";
 
-const ALLOWED_STATUSES = ["draft", "published", "cancelled", "ended"] as const;
+const ALLOWED_STATUSES = ["draft", "pending_review", "published", "blocked", "cancelled", "ended"] as const;
 type AllowedStatus = (typeof ALLOWED_STATUSES)[number];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ eventId: string }> }) {

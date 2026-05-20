@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Nav from "@/app/components/Nav";
+import Footer from "@/app/components/Footer";
 import LocationNavigationPopup from "@/app/components/LocationNavigationPopup";
 import { db } from "@/lib/db";
 import { getReservedCount } from "@/lib/orders";
@@ -63,7 +64,7 @@ export default async function EventPage({
       organizer: { slug: organizerSlug },
     },
     include: {
-      organizer: { select: { name: true, slug: true } },
+      organizer: { select: { name: true, slug: true, email: true, bankAccount: true, ico: true } },
       ticketCategories: true,
     },
   });
@@ -169,7 +170,35 @@ export default async function EventPage({
             )}
           </div>
         </div>
+
+        {/* Pořadatel akce */}
+        <div className="mt-12 border-t border-gray-800 pt-8">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
+            Pořadatel akce
+          </h2>
+          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-sm space-y-1.5">
+            <p className="font-medium text-white">{event.organizer.name}</p>
+            {event.organizer.ico && (
+              <p className="text-gray-400">IČO: {event.organizer.ico}</p>
+            )}
+            <p className="text-gray-400">{event.organizer.email}</p>
+            <p className="text-gray-400">Bankovní účet: {event.organizer.bankAccount}</p>
+            <p className="text-gray-500 text-xs mt-3 pt-3 border-t border-gray-700 leading-relaxed">
+              Pořadatelem akce je výše uvedený subjekt. Tyckety.cz poskytují technické řešení pro
+              vstupenky a nejsou pořadatelem akce.
+            </p>
+          </div>
+          <div className="mt-4 text-right">
+            <a
+              href={`mailto:info@tyckety.cz?subject=${encodeURIComponent("Nahlášení podezřelé akce")}&body=${encodeURIComponent(`Nahlašuji podezřelou akci:\n${siteUrl}/${organizerSlug}/${eventSlug}\n\nDůvod:\n`)}`}
+              className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+            >
+              Nahlásit podezřelou akci
+            </a>
+          </div>
+        </div>
       </main>
+      <Footer />
     </>
   );
 }

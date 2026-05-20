@@ -17,6 +17,7 @@ model Organizer {
   email             String   @unique
   bankAccount       String
   notificationEmail String
+  ico               String?
   createdAt         DateTime @default(now())
 
   events          Event[]
@@ -52,7 +53,9 @@ model Session {
 
 enum EventStatus {
   draft
+  pending_review
   published
+  blocked
   cancelled
   ended
 }

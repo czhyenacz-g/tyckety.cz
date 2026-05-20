@@ -12,14 +12,18 @@ import StatusButton from "./StatusButton";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Koncept",
+  pending_review: "Čeká na schválení",
   published: "Zveřejněno",
+  blocked: "Zablokováno",
   cancelled: "Zrušeno",
   ended: "Proběhlo",
 };
 
 const STATUS_COLOR: Record<string, string> = {
   draft: "text-gray-400 bg-gray-700",
+  pending_review: "text-yellow-300 bg-yellow-900/40",
   published: "text-green-400 bg-green-900/40",
+  blocked: "text-red-400 bg-red-900/40",
   cancelled: "text-red-400 bg-red-900/40",
   ended: "text-gray-500 bg-gray-800",
 };
@@ -252,12 +256,22 @@ export default async function EventDetail({
 
         {/* Objednávky */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <h2 className="font-semibold mb-4">
-            Objednávky
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold">
+              Objednávky
+              {orders.length > 0 && (
+                <span className="text-gray-500 text-sm font-normal ml-2">({orders.length})</span>
+              )}
+            </h2>
             {orders.length > 0 && (
-              <span className="text-gray-500 text-sm font-normal ml-2">({orders.length})</span>
+              <a
+                href={`/api/akce/${event.id}/export-csv`}
+                className="text-xs text-amber-400 hover:text-amber-300 border border-amber-700/50 rounded-lg px-3 py-1.5 transition-colors"
+              >
+                Exportovat CSV
+              </a>
             )}
-          </h2>
+          </div>
           <OrdersTable orders={orders} />
         </div>
       </main>

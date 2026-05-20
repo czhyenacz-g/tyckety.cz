@@ -24,16 +24,20 @@ type EventRow = {
 
 const statusLabel: Record<string, string> = {
   draft: "Draft",
+  pending_review: "Ke schválení",
   published: "Publikovaná",
+  blocked: "Zablokovaná",
   cancelled: "Zrušená",
   ended: "Ukončená",
 };
 
 const statusBadge: Record<string, string> = {
   draft: "text-gray-400 bg-gray-700/50 border-gray-600",
+  pending_review: "text-yellow-400 bg-yellow-900/30 border-yellow-700",
   published: "text-green-400 bg-green-900/30 border-green-800",
-  cancelled: "text-red-400 bg-red-900/30 border-red-800",
-  ended: "text-yellow-400 bg-yellow-900/30 border-yellow-800",
+  blocked: "text-red-400 bg-red-900/30 border-red-800",
+  cancelled: "text-gray-400 bg-gray-800/50 border-gray-700",
+  ended: "text-gray-500 bg-gray-800/30 border-gray-700",
 };
 
 function czk(n: number) {
@@ -227,7 +231,37 @@ export default function InternalTable({ events }: { events: EventRow[] }) {
               {/* Akce */}
               <td className="py-3">
                 <div className="flex flex-col gap-1.5">
-                  {ev.status !== "published" && (
+                  {ev.status === "pending_review" && (
+                    <>
+                      <Btn
+                        label="✓ Schválit"
+                        busy={busy === `${ev.id}-status-published`}
+                        onClick={() => setStatus(ev.id, "published")}
+                        color="green"
+                      />
+                      <Btn
+                        label="✗ Blokovat"
+                        busy={busy === `${ev.id}-status-blocked`}
+                        onClick={() =>
+                          setStatus(
+                            ev.id,
+                            "blocked",
+                            `Opravdu zablokovat akci "${ev.title}"?`,
+                          )
+                        }
+                        color="red"
+                      />
+                    </>
+                  )}
+                  {ev.status === "blocked" && (
+                    <Btn
+                      label="Odblokovat"
+                      busy={busy === `${ev.id}-status-draft`}
+                      onClick={() => setStatus(ev.id, "draft")}
+                      color="yellow"
+                    />
+                  )}
+                  {ev.status !== "pending_review" && ev.status !== "blocked" && ev.status !== "published" && (
                     <Btn
                       label="Publikovat"
                       busy={busy === `${ev.id}-status-published`}

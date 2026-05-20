@@ -45,6 +45,15 @@ export async function POST(req: NextRequest) {
             throw new Error("invalid_category");
           }
 
+          const event = await tx.event.findUnique({
+            where: { id: eventId },
+            select: { status: true },
+          });
+
+          if (!event || event.status !== "published") {
+            throw new Error("event_not_published");
+          }
+
           // Rezervace aktivních pending objednávek (deadline ještě neuplynul)
           const reservedResult = await tx.order.aggregate({
             where: {
@@ -89,6 +98,9 @@ export async function POST(req: NextRequest) {
         }
         if (err.message === "invalid_category") {
           return NextResponse.json({ error: "Kategorie vstupenky nenalezena." }, { status: 404 });
+        }
+        if (err.message === "event_not_published") {
+          return NextResponse.json({ error: "Akce není dostupná pro objednávky." }, { status: 403 });
         }
       }
       // P2002 na variableSymbol — zkus znovu s novým VS

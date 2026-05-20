@@ -120,6 +120,12 @@ export default function Home() {
           <Link href="/podminky" className="hover:text-gray-400 transition-colors">
             Podmínky
           </Link>
+          <Link href="/legal/terms" className="hover:text-gray-400 transition-colors">
+            Obchodní podmínky
+          </Link>
+          <Link href="/legal/privacy" className="hover:text-gray-400 transition-colors">
+            Ochrana osobních údajů
+          </Link>
         </div>
         <p className="max-w-md mx-auto text-gray-700">
           Tyckety není pořadatel akce. U demo akce jde o ukázku produktu a podporu vývoje.
