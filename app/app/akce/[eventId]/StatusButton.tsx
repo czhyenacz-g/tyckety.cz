@@ -38,9 +38,18 @@ export default function StatusButton({
 
   if (currentStatus === "pending_review") {
     return (
-      <span className="text-xs px-3 py-1.5 rounded-lg font-medium bg-yellow-900/40 text-yellow-300 border border-yellow-700/50">
-        Čeká na schválení
-      </span>
+      <div className="flex items-center gap-2">
+        <span className="text-xs px-3 py-1.5 rounded-lg font-medium bg-yellow-900/40 text-yellow-300 border border-yellow-700/50">
+          Čeká na schválení
+        </span>
+        <button
+          onClick={() => setStatus("draft")}
+          disabled={loading}
+          className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 bg-gray-700 hover:bg-gray-600 text-gray-400"
+        >
+          {loading ? "…" : "Stáhnout zpět"}
+        </button>
+      </div>
     );
   }
 
