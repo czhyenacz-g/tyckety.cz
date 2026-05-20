@@ -40,7 +40,7 @@ export default function Home() {
                 </h1>
                 <div className="space-y-1 text-gray-300 text-sm">
                   <p>📅 24. října 2026 · 19:00</p>
-                  <p>📍{" "}<LocationNavigationPopup label="Klub Inferno, Praha" venueName="Klub Inferno" venueAddress="Praha" /></p>
+                  <p>📍{" "}<LocationNavigationPopup label="Klub Inferno, Praha 8" venueName="Klub Inferno" venueAddress="Zenklova 88, Praha 8 – Libeň" /></p>
                   <p>🎟 Základní vstupenka — 299 Kč</p>
                 </div>
               </div>

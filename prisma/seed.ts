@@ -26,7 +26,7 @@ async function main() {
       "Nezaměnitelná atmosféra, basy co otřásají zdmi a pět kapel nabitých riffama. Tohle není koncert pro slabé povahy — přijďte si vyčistit hlavu a nechat se rozdrtit hudbou.",
     startsAt: new Date("2026-10-24T17:00:00.000Z"),
     venueName: "Klub Inferno",
-    venueAddress: "Praha",
+    venueAddress: "Zenklova 88, Praha 8 – Libeň",
     posterUrl: "/images/test_koncert_web.webp",
     status: "published" as const,
   };
