@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import Nav from "./components/Nav";
+import LocationNavigationPopup from "./components/LocationNavigationPopup";
 
 const DEMO_URL = "/demo-podnik/test-heavy-metal-koncert";
 
@@ -39,7 +40,7 @@ export default function Home() {
                 </h1>
                 <div className="space-y-1 text-gray-300 text-sm">
                   <p>📅 24. října 2026 · 19:00</p>
-                  <p>📍 Klub Inferno, Praha</p>
+                  <p>📍{" "}<LocationNavigationPopup label="Klub Inferno, Praha" venueName="Klub Inferno" venueAddress="Praha" /></p>
                   <p>🎟 Základní vstupenka — 299 Kč</p>
                 </div>
               </div>

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Nav from "@/app/components/Nav";
+import LocationNavigationPopup from "@/app/components/LocationNavigationPopup";
 import { db } from "@/lib/db";
 import { getReservedCount } from "@/lib/orders";
 import PurchaseForm from "./PurchaseForm";
@@ -117,8 +118,12 @@ export default async function EventPage({
                 </p>
                 {event.venueName && (
                   <p>
-                    📍 {event.venueName}
-                    {event.venueAddress ? `, ${event.venueAddress}` : ""}
+                    📍{" "}
+                    <LocationNavigationPopup
+                      label={event.venueAddress ? `${event.venueName}, ${event.venueAddress}` : event.venueName}
+                      venueName={event.venueName}
+                      venueAddress={event.venueAddress ?? undefined}
+                    />
                   </p>
                 )}
                 {category && (
