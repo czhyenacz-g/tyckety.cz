@@ -30,6 +30,7 @@ export default function NovaAkceForm({ defaultBankAccount, defaultNotificationEm
       capacity: fd.get("capacity"),
       bankAccount: fd.get("bankAccount"),
       notificationEmail: fd.get("notificationEmail"),
+      ico: fd.get("ico"),
     };
 
     const res = await fetch("/api/akce", {
@@ -112,6 +113,13 @@ export default function NovaAkceForm({ defaultBankAccount, defaultNotificationEm
           placeholder="info@moje-akce.cz"
           defaultValue={defaultNotificationEmail}
         />
+        <Field
+          label="IČO"
+          name="ico"
+          type="text"
+          placeholder="12345678"
+          helperText="Vyplňte, pokud akci pořádáte jako podnikatel nebo organizace."
+        />
       </section>
 
       <button
@@ -133,6 +141,7 @@ function Field({
   required,
   min,
   defaultValue,
+  helperText,
 }: {
   label: string;
   name: string;
@@ -141,6 +150,7 @@ function Field({
   required?: boolean;
   min?: string;
   defaultValue?: string;
+  helperText?: string;
 }) {
   return (
     <div>
@@ -154,6 +164,7 @@ function Field({
         defaultValue={defaultValue}
         className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-amber-500 transition-colors text-sm"
       />
+      {helperText && <p className="text-xs text-gray-600 mt-1">{helperText}</p>}
     </div>
   );
 }

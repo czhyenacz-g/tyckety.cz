@@ -77,14 +77,32 @@ CSV obsahuje: datum objednávky, ID objednávky, jméno, e-mail, typ vstupenky, 
 - `EventStatus` enum: přidány `pending_review` a `blocked`
 - `Organizer` model: přidáno volitelné pole `ico String?`
 
+## Jak je vynuceno, že published smí nastavit jen admin
+
+Jsou dvě oddělené API routes se separátní auth:
+
+1. **`/api/akce/[eventId]/status`** (pořadatel) — vyžaduje `getSession()` (magic link session).
+   `VALID = ["draft", "pending_review", "cancelled", "ended"]` — `published` a `blocked` zde není.
+   Pořadatel fyzicky nemůže přes tuto route nastavit `published`.
+
+2. **`/api/internal/events/[eventId]/status`** (interní admin) — vyžaduje `requireSuperAdmin()`.
+   `ALLOWED_STATUSES = ["draft", "pending_review", "published", "blocked", "cancelled", "ended"]` — vše je povoleno.
+
+`StatusButton.tsx` na straně pořadatele volá pouze první route.
+`InternalTable.tsx` volá `/api/internal/events/[eventId]/status` — druhý endpoint.
+
+Žádná veřejná stránka neexponuje data pro `draft`, `pending_review` ani `blocked` akce.
+Objednávku nelze vytvořit pro non-published akci (`event.status !== "published"` → HTTP 403).
+
 ## Co zůstává TODO
 
-- **Anonymizace/zkomolení osobních údajů po čase** — záměrně neřešeno v tomto PR
+- **Anonymizace/zkomolení osobních údajů po čase** — záměrně neřešeno (out of scope pro legal MVP)
+- **Anti-bot, rate limiting, geo block** — záměrně neřešeno v tomto tasku; tyto věci nejsou součástí legal MVP scope
 - **Marketing souhlas** — připraven text v privacy page; infrastruktura pro opt-in newsletter zatím neexistuje
 - **KYC pořadatelů** — neřeší se; pořadatelé se registrují bez ověření identity
-- **IČO validace** — pole existuje v modelu, ale není validováno ani zobrazeno v registračním formuláři; TODO přidat do `app/app/akce/nova` nebo nastavení pořadatele
+- **IČO validace** — pole existuje v modelu a formuláři `NovaAkceForm`, ale hodnota není validována formátem (8 číslic)
 - **Notifikace pořadatele při blokaci** — admin zablokuje akci, ale pořadatel nedostane e-mail; TODO přidat e-mailovou notifikaci
-- **Notifikace admina při `pending_review`** — akce odeslána ke schválení, admin nedostane notifikaci; TODO přidat e-mail / Slack webhook
+- **Notifikace admina při `pending_review`** — akce odeslána ke schválení, ale admin nedostane notifikaci; TODO přidat e-mail nebo Slack webhook
 - **Platební podmínky reklamací** — pořadatel odpovídá, ale Tyckety nemají mechanismus pro vymáhání vrácení peněz
 - **GDPR request handling** — práva subjektů dat (přístup, výmaz) zatím jen textově v privacy page; žádný automatizovaný tok
 
@@ -103,6 +121,8 @@ CSV obsahuje: datum objednávky, ID objednávky, jméno, e-mail, typ vstupenky, 
 - `app/[organizerSlug]/[eventSlug]/PurchaseForm.tsx` — terms checkbox, GDPR info
 - `app/app/akce/[eventId]/StatusButton.tsx` — pending_review flow
 - `app/app/akce/[eventId]/page.tsx` — STATUS_LABEL/COLOR, CSV export button
+- `app/app/akce/nova/NovaAkceForm.tsx` — přidáno IČO pole s helper textem
+- `app/api/akce/route.ts` — přijímá a ukládá ico do organizer modelu
 - `app/api/akce/[eventId]/status/route.ts` — organizer VALID statuses
 - `app/api/internal/events/[eventId]/status/route.ts` — internal ALLOWED_STATUSES
 - `app/internal/InternalTable.tsx` — nové statusy + approve/block akce

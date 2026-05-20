@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Nepřihlášen." }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const { title, startsAt, venueName, venueAddress, description, posterUrl, priceCzk, capacity, bankAccount, notificationEmail } = body;
+  const { title, startsAt, venueName, venueAddress, description, posterUrl, priceCzk, capacity, bankAccount, notificationEmail, ico } = body;
 
   if (!title?.trim() || !startsAt || !venueName?.trim() || !priceCzk || !capacity) {
     return NextResponse.json({ error: "Vyplňte povinná pole." }, { status: 400 });
@@ -41,9 +41,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Update organizer contact details if changed
-  const orgUpdates: Record<string, string> = {};
+  const orgUpdates: Record<string, string | null> = {};
   if (bankAccount?.trim()) orgUpdates.bankAccount = bankAccount.trim();
   if (notificationEmail?.trim()) orgUpdates.notificationEmail = notificationEmail.trim();
+  if (ico?.trim()) orgUpdates.ico = ico.trim();
   if (Object.keys(orgUpdates).length > 0) {
     await db.organizer.update({ where: { id: session.organizer.id }, data: orgUpdates });
   }
