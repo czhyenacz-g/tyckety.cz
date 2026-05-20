@@ -162,6 +162,40 @@ Checklist:
 - [ ] Scan token existuje (vidí ho pořadatel na detailu akce)
 - [ ] Email odesílání funguje — otestuj magic link na produkci
 
+## Soft limit bezplatného provozu
+
+Tyckety má měkkou hranici bezplatného testovacího provozu: **666 vydaných vstupenek na pořadatele**.
+
+### Co limit dělá (a nedělá)
+
+- ✅ Zobrazí pořadateli informační box v `/app` dashboardu podle aktuálního počtu vydaných vstupenek.
+- ✅ `/internal` ukazuje tabulku pořadatelů s jejich usage a threshold stavem.
+- ❌ **Nic neblokuje.** Nákup, vystavení vstupenek ani scanner fungují bez ohledu na počet vydaných vstupenek.
+- ❌ Žádný automatický paywall ani fakturace.
+
+### Threshold stavy
+
+| Stav | Počet vstupenek | Co se zobrazí v dashboardu |
+|------|-----------------|---------------------------|
+| `ok` | 0–199 | Tiché info: "Tyckety je zatím v testovacím provozu zdarma." |
+| `support_hint` | 200–499 | Jemný hint: možnost podpořit projekt přes demo koncert TEST |
+| `nearing` | 500–665 | Amber upozornění: blíží se hranici 666, domluvíme se |
+| `exceeded` | 666+ | Informace o překročení, férovém řešení; bez blokace |
+
+### Kde je logika
+
+- Konstanty a pure funkce: `lib/usage.ts` (`FREE_TICKET_LIMIT`, `getUsageThresholdState`)
+- DB helper: `getOrganizerIssuedTicketCount(organizerId)` — počítá Ticket se statusem `issued` nebo `used`
+- Dashboard box: `app/app/page.tsx`
+- Internal přehled: `app/internal/page.tsx` (sekce "Využití — pořadatelé")
+
+### Co dělat při překročení limitu
+
+1. Otevři `/internal` — sekce "Využití — pořadatelé"
+2. Pořadatelé ve stavu `exceeded` jsou zvýrazněni s interním signálem "Kontaktovat kvůli férovému nastavení dalšího provozu."
+3. Kontaktuj pořadatele na jeho notifikační email (viditelný v Supabase nebo přes Prisma query)
+4. Domluvte se individuálně — orientačně 2–5 Kč z vydané vstupenky podle trafficu a domluvy
+
 ## Deploy
 
 Auto-deploy: push do větve `main` → Vercel začne build automaticky.

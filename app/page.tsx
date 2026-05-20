@@ -108,7 +108,7 @@ export default function Home() {
             >
               Vytvořit vlastní akci →
             </Link>
-            <p className="text-gray-600 text-xs mt-3">Teď bez poplatků · MVP ve vývoji</p>
+            <p className="text-gray-600 text-xs mt-3">V testovacím provozu · zatím bez poplatků</p>
           </div>
         </section>
 

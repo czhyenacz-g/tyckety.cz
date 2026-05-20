@@ -52,6 +52,20 @@ export default function PodminkyPage() {
             </p>
           </Section>
 
+          <Section title="Bezplatný provoz a férové podmínky">
+            <p className="mb-3">
+              Tyckety je v testovacím provozu zdarma. Náklady na provoz zatím neseme my.
+              Pokud pořadatel přes službu vydá více než 666 vstupenek, můžeme ho kontaktovat
+              kvůli domluvě férových podmínek dalšího používání.
+            </p>
+            <p className="text-gray-400">
+              Do budoucna může být další používání řešeno individuální domluvou, například
+              drobným příspěvkem za vydanou vstupenku podle rozsahu používání — orientačně
+              v řádu jednotek korun. Nejde o automatický poplatek ani o závazně stanovený
+              ceník. Vždy chceme hledat řešení, které dává smysl oběma stranám.
+            </p>
+          </Section>
+
           <Section title="Ochrana dat">
             <p>
               Tyckety ukládá pouze údaje nezbytné pro provoz služby: jméno a e-mail kupujícího,

@@ -94,8 +94,20 @@ Existující ticketing platformy (Ticketmaster, GoOut, Vstupenka.cz) berou 5–1
 | Bankovní párování | ⚠️ MVP | CSV import funguje; automatické API (Fio) není implementováno |
 | Právní texty | ⚠️ Beta | `/podminky` je placeholder pro beta; potřeba doladit pro reálný provoz |
 | Produkční test | ⚠️ Chybí | Projekt nebyl testován s reálným pořadatelem a reálnými zákazníky |
-| Unit testy | ❌ Chybí | Žádné unit ani integration testy — main logika ověřena ručně |
+| Unit testy | ✅ Přidány | Vitest: CSV parser, classifyOrder, safeNext, email outbox, usage threshold |
 | Kamerový QR scan | 📝 TODO | Scanner aktuálně vyžaduje ruční zadání token stringu |
+
+---
+
+## Monetizační hypotéza
+
+Tyckety je v testovacím provozu zdarma. Implementovaný přístup k monetizaci:
+
+- **Soft threshold**: 666 vydaných vstupenek na pořadatele. Nic neblokuje — jde o měkký signál.
+- **Implementace**: `lib/usage.ts` — konstanty + pure funkce `getUsageThresholdState(count)`. Dashboard pořadatele zobrazuje informační box podle aktuálního počtu. Internal panel ukazuje přehled pořadatelů podle usage.
+- **Při překročení**: interní signál v `/internal` — "Kontaktovat kvůli férovému nastavení dalšího provozu." Žádná automatická blokace.
+- **Orientační budoucí model**: individuální domluva, orientačně 2–5 Kč z vydané vstupenky podle rozsahu používání a trafficu. Není implementováno jako závazný ceník — záměrně.
+- **Právní pozice**: `/podminky` popisuje fair-play přístup bez tvrdého paywallu.
 
 ---
 
