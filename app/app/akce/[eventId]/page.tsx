@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { expireStaleOrders, getReservedCount } from "@/lib/orders";
 import AppHeader from "@/app/components/AppHeader";
 import CsvImportForm from "./CsvImportForm";
+import MarkPaidCodesForm from "./MarkPaidCodesForm";
 import OrdersTable from "./OrdersTable";
 import StatusButton from "./StatusButton";
 
@@ -246,6 +247,7 @@ export default async function EventDetail({
         </details>
 
         <CsvImportForm eventId={event.id} />
+        <MarkPaidCodesForm eventId={event.id} />
 
         {/* Objednávky */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
