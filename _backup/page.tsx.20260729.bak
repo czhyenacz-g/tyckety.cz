@@ -29,19 +29,6 @@ export default function Home() {
 
             {/* Info */}
             <div className="flex flex-col gap-5">
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3">
-                <p className="text-amber-300 text-sm font-semibold mb-1">
-                  Provoz stránek je dočasně pozastaven
-                </p>
-                <p className="text-gray-300 text-xs leading-relaxed">
-                  Z personálních důvodů teď Tyckety.cz neudržujeme. Máte zájem o spolupráci, popř. o převzetí projektu?
-                  Napište nám na{" "}
-                  <a href="mailto:info@levnemenu.cz" className="text-amber-400 hover:underline">
-                    info@levnemenu.cz
-                  </a>.
-                </p>
-              </div>
-
               <div>
                 <p className="text-amber-400 text-xs font-semibold uppercase tracking-widest mb-3">
                   Ukázková akce · Tyckety.cz
